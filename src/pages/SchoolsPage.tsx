@@ -142,8 +142,8 @@ const SchoolsPage = () => {
 
         if (!formData.phoneNumber.trim()) {
             errors.phoneNumber = 'Phone number is required';
-        } else if (!/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
-            errors.phoneNumber = 'Invalid Malaysian phone number format';
+        //} else if (!/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
+        //    errors.phoneNumber = 'Invalid Malaysian phone number format';
         }
 
         if (!formData.email.trim()) {
@@ -195,8 +195,8 @@ const SchoolsPage = () => {
 
         if (!editFormData.phoneNumber.trim()) {
             errors.phoneNumber = 'Phone number is required';
-        } else if (!/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/.test(editFormData.phoneNumber.replace(/\s/g, ''))) {
-            errors.phoneNumber = 'Invalid Malaysian phone number format';
+        //} else if (!/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/.test(editFormData.phoneNumber.replace(/\s/g, ''))) {
+        //    errors.phoneNumber = 'Invalid Malaysian phone number format';
         }
 
         if (!editFormData.email.trim()) {
