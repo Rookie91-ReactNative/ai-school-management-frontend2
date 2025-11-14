@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Download, Filter, Users, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
-/*import { authService } from '../services/authService';*/
 
 interface AttendanceRecord {
     attendanceID: number;
@@ -25,6 +25,7 @@ interface AttendanceResponse {
 }
 
 const AttendancePage = () => {
+    const { t } = useTranslation();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
     const [stats, setStats] = useState({
@@ -75,7 +76,7 @@ const AttendancePage = () => {
 
     const exportReport = async () => {
         try {
-            alert('Export feature - Coming soon!');
+            alert(t('attendance.exportComingSoon'));
             // TODO: Implement CSV export endpoint
             // const response = await api.get('/attendance/export', {
             //     params: { date: selectedDate },
@@ -84,7 +85,7 @@ const AttendancePage = () => {
 
         } catch (error) {
             console.error('Error exporting report:', error);
-            alert('Failed to export report');
+            alert(t('attendance.exportFailed'));
         }
     };
 
@@ -120,16 +121,16 @@ const AttendancePage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <Calendar className="w-8 h-8 text-blue-600" />
-                        Attendance Records
+                        {t('attendance.title')}
                     </h1>
-                    <p className="text-gray-600 mt-1">View and manage attendance</p>
+                    <p className="text-gray-600 mt-1">{t('attendance.subtitle')}</p>
                 </div>
                 <button
                     onClick={exportReport}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
                     <Download className="w-5 h-5" />
-                    Export Report
+                    {t('attendance.exportReport')}
                 </button>
             </div>
 
@@ -153,10 +154,10 @@ const AttendancePage = () => {
                         onChange={(e) => setFilterStatus(e.target.value)}
                         className="input-field"
                     >
-                        <option value="All">All Status</option>
-                        <option value="Present">Present</option>
-                        <option value="Late">Late</option>
-                        <option value="Absent">Absent</option>
+                        <option value="All">{t('attendance.allStatus')}</option>
+                        <option value="Present">{t('attendance.present')}</option>
+                        <option value="Late">{t('attendance.late')}</option>
+                        <option value="Absent">{t('attendance.absent')}</option>
                     </select>
                 </div>
             </div>
@@ -169,7 +170,7 @@ const AttendancePage = () => {
                             <Users className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Total Records</p>
+                            <p className="text-sm text-gray-600">{t('attendance.totalRecords')}</p>
                             <p className="text-2xl font-bold text-gray-900">{stats.totalRecords}</p>
                         </div>
                     </div>
@@ -181,7 +182,7 @@ const AttendancePage = () => {
                             <CheckCircle className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Present</p>
+                            <p className="text-sm text-gray-600">{t('attendance.present')}</p>
                             <p className="text-2xl font-bold text-green-900">{stats.present}</p>
                         </div>
                     </div>
@@ -193,7 +194,7 @@ const AttendancePage = () => {
                             <Clock className="w-6 h-6 text-yellow-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Late</p>
+                            <p className="text-sm text-gray-600">{t('attendance.late')}</p>
                             <p className="text-2xl font-bold text-yellow-900">{stats.late}</p>
                         </div>
                     </div>
@@ -205,7 +206,7 @@ const AttendancePage = () => {
                             <XCircle className="w-6 h-6 text-red-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Absent</p>
+                            <p className="text-sm text-gray-600">{t('attendance.absent')}</p>
                             <p className="text-2xl font-bold text-red-900">{stats.absent}</p>
                         </div>
                     </div>
@@ -217,9 +218,11 @@ const AttendancePage = () => {
                 {filteredRecords.length === 0 ? (
                     <div className="text-center py-12">
                         <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No Records Found</h3>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                            {t('attendance.noRecordsFound')}
+                        </h3>
                         <p className="text-gray-600">
-                            No attendance records for the selected date and filter.
+                            {t('attendance.noRecordsMessage')}
                         </p>
                     </div>
                 ) : (
@@ -228,19 +231,19 @@ const AttendancePage = () => {
                             <thead className="bg-gray-50 border-b">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Student
+                                        {t('attendance.student')}
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Grade/Class
+                                        {t('attendance.gradeClass')}
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Check-in Time
+                                        {t('attendance.checkInTime')}
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
+                                        {t('attendance.status')}
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Camera
+                                        {t('attendance.camera')}
                                     </th>
                                 </tr>
                             </thead>
@@ -275,7 +278,7 @@ const AttendancePage = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(record.status)}`}>
-                                                {record.status}
+                                                {t(`attendance.${record.status.toLowerCase()}`)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { Calendar, Plus, Edit, Trash2, X, CheckCircle, Users, GraduationCap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import axios from 'axios';
 
@@ -24,6 +25,7 @@ interface AcademicYearFormData {
 }
 
 const AcademicYearsPage = () => {
+    const { t } = useTranslation();
     const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -71,21 +73,21 @@ const AcademicYearsPage = () => {
         const errors: Record<string, string> = {};
 
         if (!formData.yearName.trim()) {
-            errors.yearName = 'Year name is required';
+            errors.yearName = t('academicYears.validation.yearNameRequired');
         } else if (!/^\d{4}\/\d{4}$/.test(formData.yearName)) {
-            errors.yearName = 'Format must be YYYY/YYYY (e.g., 2024/2025)';
+            errors.yearName = t('academicYears.validation.yearNameFormat');
         }
 
         if (!formData.startDate) {
-            errors.startDate = 'Start date is required';
+            errors.startDate = t('academicYears.validation.startDateRequired');
         }
 
         if (!formData.endDate) {
-            errors.endDate = 'End date is required';
+            errors.endDate = t('academicYears.validation.endDateRequired');
         }
 
         if (formData.startDate && formData.endDate && formData.startDate >= formData.endDate) {
-            errors.endDate = 'End date must be after start date';
+            errors.endDate = t('academicYears.validation.endDateAfterStart');
         }
 
         setFormErrors(errors);
@@ -96,21 +98,21 @@ const AcademicYearsPage = () => {
         const errors: Record<string, string> = {};
 
         if (!editFormData.yearName.trim()) {
-            errors.yearName = 'Year name is required';
+            errors.yearName = t('academicYears.validation.yearNameRequired');
         } else if (!/^\d{4}\/\d{4}$/.test(editFormData.yearName)) {
-            errors.yearName = 'Format must be YYYY/YYYY (e.g., 2024/2025)';
+            errors.yearName = t('academicYears.validation.yearNameFormat');
         }
 
         if (!editFormData.startDate) {
-            errors.startDate = 'Start date is required';
+            errors.startDate = t('academicYears.validation.startDateRequired');
         }
 
         if (!editFormData.endDate) {
-            errors.endDate = 'End date is required';
+            errors.endDate = t('academicYears.validation.endDateRequired');
         }
 
         if (editFormData.startDate && editFormData.endDate && editFormData.startDate >= editFormData.endDate) {
-            errors.endDate = 'End date must be after start date';
+            errors.endDate = t('academicYears.validation.endDateAfterStart');
         }
 
         setFormErrors(errors);
@@ -153,10 +155,10 @@ const AcademicYearsPage = () => {
             setShowCreateModal(false);
             resetForm();
             fetchAcademicYears();
-            alert('Academic year created successfully!');
+            alert(t('academicYears.successCreate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to create academic year';
+                const errorMessage = error.response?.data?.message || t('academicYears.errorCreate');
                 alert(errorMessage);
             }
         } finally {
@@ -189,10 +191,10 @@ const AcademicYearsPage = () => {
             setSelectedYear(null);
             resetEditForm();
             fetchAcademicYears();
-            alert('Academic year updated successfully!');
+            alert(t('academicYears.successUpdate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to update academic year';
+                const errorMessage = error.response?.data?.message || t('academicYears.errorUpdate');
                 alert(errorMessage);
             }
         } finally {
@@ -202,21 +204,22 @@ const AcademicYearsPage = () => {
 
     const handleSetActive = async (year: AcademicYear) => {
         if (year.isActive) {
-            alert('This academic year is already active.');
+            alert(t('academicYears.alreadyActive'));
             return;
         }
 
-        if (!window.confirm(`Set ${year.yearName} as the active academic year?`)) {
+        const confirmMessage = `${t('academicYears.confirmSetActive')} ${year.yearName} ${t('academicYears.asActive')}`;
+        if (!window.confirm(confirmMessage)) {
             return;
         }
 
         try {
             await api.put(`/academic-year/${year.academicYearID}/activate`);
             fetchAcademicYears();
-            alert(`${year.yearName} is now the active academic year!`);
+            alert(t('academicYears.successSetActive'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to activate academic year';
+                const errorMessage = error.response?.data?.message || t('academicYears.errorSetActive');
                 alert(errorMessage);
             }
         }
@@ -224,26 +227,30 @@ const AcademicYearsPage = () => {
 
     const handleDelete = async (year: AcademicYear) => {
         if (year.isActive) {
-            alert('Cannot delete the active academic year. Please activate another year first.');
+            alert(t('academicYears.cannotDeleteActive'));
             return;
         }
 
         if (year.totalStudents > 0) {
-            alert(`Cannot delete ${year.yearName}. ${year.totalStudents} students are enrolled in this year.`);
+            alert(t('academicYears.cannotDeleteWithStudents', {
+                yearName: year.yearName,
+                count: year.totalStudents
+            }));
             return;
         }
 
-        if (!window.confirm(`Are you sure you want to delete ${year.yearName}?`)) {
+        const confirmMessage = `${t('academicYears.confirmDelete')} ${year.yearName}?`;
+        if (!window.confirm(confirmMessage)) {
             return;
         }
 
         try {
             await api.delete(`/academic-year/${year.academicYearID}`);
             fetchAcademicYears();
-            alert('Academic year deleted successfully!');
+            alert(t('academicYears.successDelete'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to delete academic year';
+                const errorMessage = error.response?.data?.message || t('academicYears.errorDelete');
                 alert(errorMessage);
             }
         }
@@ -293,16 +300,16 @@ const AcademicYearsPage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <Calendar className="w-8 h-8 text-blue-600" />
-                        Academic Years Management
+                        {t('academicYears.title')}
                     </h1>
-                    <p className="text-gray-600 mt-1">Manage school academic years and terms</p>
+                    <p className="text-gray-600 mt-1">{t('academicYears.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                 >
                     <Plus className="w-5 h-5" />
-                    Add Academic Year
+                    {t('academicYears.addYear')}
                 </button>
             </div>
 
@@ -314,7 +321,7 @@ const AcademicYearsPage = () => {
                             <Calendar className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Total Academic Years</p>
+                            <p className="text-sm text-gray-600">{t('academicYears.totalYears')}</p>
                             <p className="text-2xl font-bold text-gray-900">{academicYears.length}</p>
                         </div>
                     </div>
@@ -325,9 +332,9 @@ const AcademicYearsPage = () => {
                             <CheckCircle className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Active Year</p>
+                            <p className="text-sm text-gray-600">{t('academicYears.activeYear')}</p>
                             <p className="text-2xl font-bold text-green-900">
-                                {activeYear ? activeYear.yearName : 'None'}
+                                {activeYear ? activeYear.yearName : t('common.none')}
                             </p>
                         </div>
                     </div>
@@ -338,7 +345,7 @@ const AcademicYearsPage = () => {
                             <Users className="w-6 h-6 text-purple-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Students (Active Year)</p>
+                            <p className="text-sm text-gray-600">{t('academicYears.totalEnrollment')}</p>
                             <p className="text-2xl font-bold text-purple-900">
                                 {activeYear ? activeYear.totalStudents : 0}
                             </p>
@@ -354,22 +361,22 @@ const AcademicYearsPage = () => {
                         <thead className="bg-gray-50 border-b">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Academic Year
+                                    {t('academicYears.yearName')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Duration
+                                    {t('academicYears.dateRange')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Students
+                                    {t('academicYears.students')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Classes
+                                    {t('academicYears.classes')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Status
+                                    {t('academicYears.status')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Actions
+                                    {t('academicYears.actions')}
                                 </th>
                             </tr>
                         </thead>
@@ -377,7 +384,7 @@ const AcademicYearsPage = () => {
                             {academicYears.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                                        No academic years found. Create one to get started.
+                                        {t('academicYears.noYears')}
                                     </td>
                                 </tr>
                             ) : (
@@ -409,44 +416,39 @@ const AcademicYearsPage = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {year.isActive ? (
-                                                <span className="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    <CheckCircle className="w-3 h-3" />
-                                                    Active
-                                                </span>
-                                            ) : (
-                                                <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                    Inactive
-                                                </span>
-                                            )}
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${year.isActive
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                {year.isActive ? t('academicYears.active') : t('academicYears.inactive')}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div className="flex items-center gap-3">
-                                                {!year.isActive && (
+                                            <button
+                                                onClick={() => handleEditClick(year)}
+                                                className="text-blue-600 hover:text-blue-900 mr-3"
+                                                title={t('academicYears.edit')}
+                                            >
+                                                <Edit className="w-5 h-5 inline" />
+                                            </button>
+                                            {!year.isActive && (
+                                                <>
                                                     <button
                                                         onClick={() => handleSetActive(year)}
-                                                        className="text-green-600 hover:text-green-900"
-                                                        title="Set as active year"
+                                                        className="text-green-600 hover:text-green-900 mr-3"
+                                                        title={t('academicYears.setActive')}
                                                     >
-                                                        <CheckCircle className="w-4 h-4" />
+                                                        <CheckCircle className="w-5 h-5 inline" />
                                                     </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleEditClick(year)}
-                                                    className="text-blue-600 hover:text-blue-900"
-                                                    title="Edit year"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(year)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Delete year"
-                                                    disabled={year.isActive || year.totalStudents > 0}
-                                                >
-                                                    <Trash2 className={`w-4 h-4 ${(year.isActive || year.totalStudents > 0) ? 'opacity-30 cursor-not-allowed' : ''}`} />
-                                                </button>
-                                            </div>
+                                                    <button
+                                                        onClick={() => handleDelete(year)}
+                                                        className="text-red-600 hover:text-red-900"
+                                                        title={t('academicYears.delete')}
+                                                    >
+                                                        <Trash2 className="w-5 h-5 inline" />
+                                                    </button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -461,7 +463,7 @@ const AcademicYearsPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
                         <div className="border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Add New Academic Year</h2>
+                            <h2 className="text-xl font-bold text-gray-900">{t('academicYears.createYear')}</h2>
                             <button
                                 onClick={() => { setShowCreateModal(false); resetForm(); }}
                                 className="text-gray-400 hover:text-gray-600"
@@ -473,7 +475,7 @@ const AcademicYearsPage = () => {
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Calendar className="w-4 h-4 inline mr-1" />Academic Year Name *
+                                    <Calendar className="w-4 h-4 inline mr-1" />{t('academicYears.yearName')} *
                                 </label>
                                 <input
                                     type="text"
@@ -486,12 +488,14 @@ const AcademicYearsPage = () => {
                                 {formErrors.yearName && (
                                     <p className="text-red-500 text-xs mt-1">{formErrors.yearName}</p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1">Format: YYYY/YYYY (e.g., 2024/2025)</p>
+                                <p className="text-xs text-gray-500 mt-1">{t('academicYears.formatHint')}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('academicYears.startDate')} *
+                                    </label>
                                     <input
                                         type="date"
                                         value={formData.startDate}
@@ -505,7 +509,9 @@ const AcademicYearsPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('academicYears.endDate')} *
+                                    </label>
                                     <input
                                         type="date"
                                         value={formData.endDate}
@@ -521,8 +527,7 @@ const AcademicYearsPage = () => {
 
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <p className="text-sm text-blue-800">
-                                    💡 <strong>Tip:</strong> The new academic year will be created as inactive.
-                                    You can set it as active later using the "Set Active" button.
+                                    💡 <strong>{t('academicYears.tipTitle')}</strong> {t('academicYears.tipMessage')}
                                 </p>
                             </div>
 
@@ -533,14 +538,14 @@ const AcademicYearsPage = () => {
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                                     disabled={isSubmitting}
                                 >
-                                    Cancel
+                                    {t('academicYears.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? 'Creating...' : 'Create Academic Year'}
+                                    {isSubmitting ? t('academicYears.creating') : t('academicYears.save')}
                                 </button>
                             </div>
                         </form>
@@ -553,7 +558,7 @@ const AcademicYearsPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
                         <div className="border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Edit Academic Year</h2>
+                            <h2 className="text-xl font-bold text-gray-900">{t('academicYears.editYear')}</h2>
                             <button
                                 onClick={() => { setShowEditModal(false); setSelectedYear(null); resetEditForm(); }}
                                 className="text-gray-400 hover:text-gray-600"
@@ -565,7 +570,7 @@ const AcademicYearsPage = () => {
                         <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Calendar className="w-4 h-4 inline mr-1" />Academic Year Name *
+                                    <Calendar className="w-4 h-4 inline mr-1" />{t('academicYears.yearName')} *
                                 </label>
                                 <input
                                     type="text"
@@ -578,12 +583,14 @@ const AcademicYearsPage = () => {
                                 {formErrors.yearName && (
                                     <p className="text-red-500 text-xs mt-1">{formErrors.yearName}</p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1">Format: YYYY/YYYY (e.g., 2024/2025)</p>
+                                <p className="text-xs text-gray-500 mt-1">{t('academicYears.formatHint')}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('academicYears.startDate')} *
+                                    </label>
                                     <input
                                         type="date"
                                         value={editFormData.startDate}
@@ -597,7 +604,9 @@ const AcademicYearsPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('academicYears.endDate')} *
+                                    </label>
                                     <input
                                         type="date"
                                         value={editFormData.endDate}
@@ -614,7 +623,7 @@ const AcademicYearsPage = () => {
                             {selectedYear.isActive && (
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                                     <p className="text-sm text-green-800">
-                                        ✓ This is the currently active academic year
+                                        ✓ {t('academicYears.currentlyActive')}
                                     </p>
                                 </div>
                             )}
@@ -626,14 +635,14 @@ const AcademicYearsPage = () => {
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                                     disabled={isSubmitting}
                                 >
-                                    Cancel
+                                    {t('academicYears.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? 'Updating...' : 'Update Academic Year'}
+                                    {isSubmitting ? t('academicYears.updating') : t('academicYears.save')}
                                 </button>
                             </div>
                         </form>

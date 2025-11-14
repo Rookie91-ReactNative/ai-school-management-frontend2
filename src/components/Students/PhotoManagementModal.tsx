@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Image as ImageIcon, CheckCircle, AlertCircle, Eye, EyeOff, /*Trash2,*/ RefreshCw } from 'lucide-react';
 import { studentService } from '../../services/studentService';
 import LoadingSpinner from '../Common/LoadingSpinner';
@@ -28,6 +29,7 @@ const PhotoManagementModal = ({
     onClose,
     onPhotoUpdated
 }: PhotoManagementModalProps) => {
+    const { t } = useTranslation();
     const [photos, setPhotos] = useState<FaceImage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -181,7 +183,7 @@ const PhotoManagementModal = ({
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                                 <ImageIcon className="w-6 h-6 text-blue-600" />
-                                Manage Photos
+                                {t('students.managePhotoModal.managePhotos')}
                             </h2>
                             <p className="text-sm text-gray-600 mt-1">
                                 {studentName} ({studentCode})
@@ -200,11 +202,11 @@ const PhotoManagementModal = ({
                         <div className="flex gap-4 text-sm">
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                <span className="text-gray-700">Active: {activePhotos.length}</span>
+                                <span className="text-gray-700">{t('students.managePhotoModal.active')}: {activePhotos.length}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                <span className="text-gray-700">Inactive: {inactivePhotos.length}</span>
+                                <span className="text-gray-700">{t('students.managePhotoModal.inactive')}: {inactivePhotos.length}</span>
                             </div>
                         </div>
 
@@ -217,7 +219,7 @@ const PhotoManagementModal = ({
                                     }`}
                             >
                                 {showInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                {showInactive ? 'Showing All' : 'Show Inactive'}
+                                {showInactive ? <>{t('students.managePhotoModal.showingAll')}</> : <>{t('students.managePhotoModal.inactive')}</>}
                             </button>
 
                             {selectedPhotos.size > 0 && (
@@ -226,7 +228,7 @@ const PhotoManagementModal = ({
                                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
                                 >
                                     <EyeOff className="w-4 h-4" />
-                                    Deactivate ({selectedPhotos.size})
+                                    {t('students.managePhotoModal.deactivate')} ({selectedPhotos.size})
                                 </button>
                             )}
 
@@ -235,7 +237,7 @@ const PhotoManagementModal = ({
                                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
                             >
                                 <RefreshCw className="w-4 h-4" />
-                                Refresh
+                                {t('students.managePhotoModal.refresh')}
                             </button>
                         </div>
                     </div>
@@ -253,7 +255,7 @@ const PhotoManagementModal = ({
                                     onClick={() => setError('')}
                                     className="text-xs text-red-600 underline mt-1"
                                 >
-                                    Dismiss
+                                    {t('students.managePhotoModal.dismiss')}
                                 </button>
                             </div>
                         </div>
@@ -275,8 +277,8 @@ const PhotoManagementModal = ({
                     ) : photos.length === 0 ? (
                         <div className="text-center py-12">
                             <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-500">No photos found for this student</p>
-                            <p className="text-sm text-gray-400 mt-1">Upload some photos to get started</p>
+                                <p className="text-gray-500">{t('students.managePhotoModal.NoPhotoMsg1')}</p>
+                                <p className="text-sm text-gray-400 mt-1">{t('students.managePhotoModal.NoPhotoMsg2')}</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -307,7 +309,7 @@ const PhotoManagementModal = ({
                                                     : 'bg-red-500 text-white'
                                                 }`}
                                         >
-                                            {photo.isActive ? 'Active' : 'Inactive'}
+                                            {photo.isActive ? <>{t('students.managePhotoModal.active')}</> : <>{t('students.managePhotoModal.inactive')}</>}
                                         </span>
                                     </div>
 
@@ -335,7 +337,7 @@ const PhotoManagementModal = ({
                                                     title="Deactivate this photo"
                                                 >
                                                     <EyeOff className="w-3 h-3" />
-                                                    Deactivate
+                                                    {t('students.managePhotoModal.deactivate')}
                                                 </button>
                                             ) : (
                                                 <button
@@ -344,7 +346,7 @@ const PhotoManagementModal = ({
                                                     title="Activate this photo"
                                                 >
                                                     <Eye className="w-3 h-3" />
-                                                    Activate
+                                                        {t('students.managePhotoModal.activate')}
                                                 </button>
                                             )}
 
@@ -370,13 +372,13 @@ const PhotoManagementModal = ({
 
                     {/* Info Box */}
                     <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 className="font-semibold text-blue-900 mb-2">About Photo Management:</h3>
+                        <h3 className="font-semibold text-blue-900 mb-2">{t('students.managePhotoModal.aboutPhotoManagement')}</h3>
                         <ul className="text-sm text-blue-800 space-y-1">
-                            <li>• <strong>Active photos</strong> are used for face recognition training</li>
-                            <li>• <strong>Deactivated photos</strong> are excluded from training but kept in database</li>
-                            <li>• Deactivate wrong/poor quality photos to improve recognition accuracy</li>
-                            <li>• You can reactivate photos anytime if needed</li>
-                            <li>• Permanently deleted photos cannot be recovered</li>
+                            <li>• <strong>{t('students.managePhotoModal.activePhotos')}</strong>{t('students.managePhotoModal.aboutPhotoManagement1')}</li>
+                            <li>• <strong>{t('students.managePhotoModal.deactivatedPhotos')}</strong>{t('students.managePhotoModal.aboutPhotoManagement2')}</li>
+                            <li>• {t('students.managePhotoModal.aboutPhotoManagement3')}</li>
+                            <li>• {t('students.managePhotoModal.aboutPhotoManagement4')}</li>
+                            {/*<li>• Permanently deleted photos cannot be recovered</li>*/}
                         </ul>
                     </div>
                 </div>
@@ -387,7 +389,7 @@ const PhotoManagementModal = ({
                         onClick={onClose}
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        Close
+                        {t('students.managePhotoModal.close')}
                     </button>
                 </div>
             </div>

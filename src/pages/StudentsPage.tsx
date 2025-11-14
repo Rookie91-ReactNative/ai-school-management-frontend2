@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Users, Plus, Edit, Trash2, X, Upload, Filter, GraduationCap, BookOpen, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import api from '../services/api';
 import axios from 'axios';
@@ -52,6 +53,7 @@ interface Class {
 }
 
 const StudentsPage = () => {
+    const { t } = useTranslation();
     const [students, setStudents] = useState<Student[]>([]);
     const [grades, setGrades] = useState<Grade[]>([]);
     const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
@@ -185,6 +187,21 @@ const StudentsPage = () => {
         try {
             let url = `/student/school/${schoolID}`;
             const params = new URLSearchParams();
+
+            // ✅ Handle special case: -1 means "not enrolled"
+            if (filterAcademicYearId === -1) {
+                // Get all students and filter client-side for not enrolled
+                const response = await api.get(url);
+                const allStudents = response.data.data || [];
+                // Filter to show only students without academic year
+                const notEnrolledStudents = allStudents.filter((s: Student) =>
+                    !s.academicYearID || s.academicYearID === null
+                );
+                setStudents(notEnrolledStudents);
+                return;
+            }
+
+            // Normal filtering
             if (filterAcademicYearId) params.append('academicYearId', filterAcademicYearId.toString());
             if (filterGradeId) params.append('gradeId', filterGradeId.toString());
             if (filterClassId) params.append('classId', filterClassId.toString());
@@ -201,9 +218,9 @@ const StudentsPage = () => {
         const errors: Record<string, string> = {};
         const { student } = formData;
 
-        if (!student.studentCode.trim()) errors.studentCode = 'Student code is required';
-        if (!student.fullName.trim()) errors.fullName = 'Full name is required';
-        if (!student.dateOfBirth) errors.dateOfBirth = 'Date of birth is required';
+        if (!student.studentCode.trim()) errors.studentCode = t('students.validation.studentCodeRequired');
+        if (!student.fullName.trim()) errors.fullName = t('students.validation.fullNameRequired');
+        if (!student.dateOfBirth) errors.dateOfBirth = t('students.validation.dateOfBirthRequired');
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -215,18 +232,112 @@ const StudentsPage = () => {
 
         try {
             setIsSubmitting(true);
-            await api.post('/student', formData);
+
+            // ✅ Clean the data before sending - convert empty strings to null
+            const cleanedData = {
+                student: {
+                    schoolID: formData.student.schoolID,
+                    studentCode: formData.student.studentCode.trim(),
+                    fullName: formData.student.fullName.trim(),
+                    // Convert empty strings to null for optional fields
+                    email: formData.student.email?.trim() || null,
+                    phoneNumber: formData.student.phoneNumber?.trim() || null,
+                    parentContact: formData.student.parentContact?.trim() || null,
+                    parentEmail: formData.student.parentEmail?.trim() || null,
+                    parentName: formData.student.parentName?.trim() || null,
+                    dateOfBirth: formData.student.dateOfBirth,
+                    gender: formData.student.gender || 'Male',
+                    address: formData.student.address?.trim() || null,
+                    enrollmentDate: formData.student.enrollmentDate
+                },
+                enrollment: formData.enrollment
+            };
+
+            // ✅ Log the data being sent (helpful for debugging)
+            console.log('📤 Creating student with data:', JSON.stringify(cleanedData, null, 2));
+
+            const response = await api.post('/student', cleanedData);
+
+            // ✅ Log successful response
+            console.log('✅ Student created successfully:', response.data);
+
             await fetchStudents();
             setShowCreateModal(false);
             resetForm();
+
+            // Show success message
+            alert(t('students.messages.successCreated') || 'Student created successfully!');
+
         } catch (error) {
+            // ✅ Enhanced error logging with full details
+            console.error('❌ Error creating student:', error);
+
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Error creating student');
+                // Log detailed error information for debugging
+                console.error('📋 Error details:', {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    data: error.response?.data,
+                    errors: error.response?.data?.errors,
+                    title: error.response?.data?.title
+                });
+
+                // Extract the most useful error message
+                let errorMessage = t('students.messages.errorCreating');
+
+                if (error.response?.data) {
+                    const data = error.response.data;
+
+                    // Try different error message locations
+                    if (data.message) {
+                        errorMessage = data.message;
+                    } else if (data.title) {
+                        errorMessage = data.title;
+                    } else if (data.errors) {
+                        // If validation errors, show them
+                        const errorDetails = Object.entries(data.errors)
+                            .map(([field, messages]) => {
+                                // Handle both string and array types
+                                const messageText = Array.isArray(messages)
+                                    ? messages.join(', ')
+                                    : String(messages);
+                                return `${field}: ${messageText}`;
+                            })
+                        errorMessage = `Validation errors:\n${errorDetails}`;
+                    }
+                }
+
+                alert(errorMessage);
+            } else {
+                // Non-Axios error
+                console.error('❌ Non-Axios error:', error);
+                alert(t('students.messages.errorCreating'));
             }
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    //const handleCreateSubmit = async (e: React.FormEvent) => {
+    //    e.preventDefault();
+    //    if (!validateForm()) return;
+
+    //    try {
+    //        setIsSubmitting(true);
+    //        await api.post('/student', formData);
+    //        await fetchStudents();
+    //        setShowCreateModal(false);
+    //        resetForm();
+    //    } catch (error) {
+    //        if (axios.isAxiosError(error)) {
+    //            alert(error.response?.data?.message || t('students.messages.errorCreating'));
+    //        }
+    //    } finally {
+    //        setIsSubmitting(false);
+    //    }
+    //};
 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -240,7 +351,7 @@ const StudentsPage = () => {
             setSelectedStudent(null);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Error updating student');
+                alert(error.response?.data?.message || t('students.messages.errorUpdating'));
             }
         } finally {
             setIsSubmitting(false);
@@ -252,7 +363,7 @@ const StudentsPage = () => {
         if (!selectedStudent) return;
 
         if (!enrollFormData.academicYearID || !enrollFormData.gradeID || !enrollFormData.classID) {
-            alert('Please fill in all required fields');
+            alert(t('students.validation.allFieldsRequired'));
             return;
         }
 
@@ -267,7 +378,7 @@ const StudentsPage = () => {
             setSelectedStudent(null);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Error enrolling student');
+                alert(error.response?.data?.message || t('students.messages.errorEnrolling'));
             }
         } finally {
             setIsSubmitting(false);
@@ -275,14 +386,14 @@ const StudentsPage = () => {
     };
 
     const handleDelete = async (studentId: number) => {
-        if (!window.confirm('Are you sure you want to delete this student?')) return;
+        if (!window.confirm(t('students.messages.confirmDelete'))) return;
 
         try {
             await api.delete(`/student/${studentId}`);
             await fetchStudents();
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Error deleting student');
+                alert(error.response?.data?.message || t('students.messages.errorDeleting'));
             }
         }
     };
@@ -381,16 +492,16 @@ const StudentsPage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <Users className="w-8 h-8 text-blue-600" />
-                        Students Management
+                        {t('students.title')}
                     </h1>
-                    <p className="text-gray-600 mt-1">Manage student information and enrollment</p>
+                    <p className="text-gray-600 mt-1">{t('students.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                     <Plus className="w-5 h-5" />
-                    Add Student
+                    {t('students.addStudent')}
                 </button>
             </div>
 
@@ -398,27 +509,40 @@ const StudentsPage = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex items-center gap-3 mb-4">
                     <Filter className="w-5 h-5 text-gray-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
-                    {(filterAcademicYearId || filterGradeId || filterClassId) && (
+                    <h2 className="text-lg font-semibold text-gray-900">{t('students.filters')}</h2>
+                    {(filterAcademicYearId !== null || filterGradeId || filterClassId) && (
                         <button
                             onClick={clearFilters}
                             className="ml-auto text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                         >
                             <X className="w-4 h-4" />
-                            Clear Filters
+                            {t('students.clearFilters')}
                         </button>
                     )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Academic Year</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('students.academicYear')}</label>
                         <select
-                            value={filterAcademicYearId || ''}
-                            onChange={(e) => setFilterAcademicYearId(e.target.value ? parseInt(e.target.value) : null)}
+                            value={filterAcademicYearId === -1 ? '-1' : (filterAcademicYearId || '')}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '-1') {
+                                    // Special case: Show only not enrolled students
+                                    setFilterAcademicYearId(-1);
+                                    setFilterGradeId(null);
+                                    setFilterClassId(null);
+                                } else {
+                                    setFilterAcademicYearId(value ? parseInt(value) : null);
+                                }
+                            }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                            <option value="">All Years</option>
+                            <option value="">{t('classes.allYears')}</option>
+                            <option value="-1" className="font-semibold text-orange-600">
+                                {t('students.notEnrolledFilter')}
+                            </option>
                             {academicYears.map(year => (
                                 <option key={year.academicYearID} value={year.academicYearID}>
                                     {year.yearName} {year.isActive && '(Active)'}
@@ -428,13 +552,13 @@ const StudentsPage = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('students.grade')}</label>
                         <select
                             value={filterGradeId || ''}
                             onChange={(e) => setFilterGradeId(e.target.value ? parseInt(e.target.value) : null)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                            <option value="">All Grades</option>
+                            <option value="">{t('students.selectGrade')}</option>
                             {grades.map(grade => (
                                 <option key={grade.gradeID} value={grade.gradeID}>{grade.gradeName}</option>
                             ))}
@@ -442,14 +566,14 @@ const StudentsPage = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Class</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('students.class')}</label>
                         <select
                             value={filterClassId || ''}
                             onChange={(e) => setFilterClassId(e.target.value ? parseInt(e.target.value) : null)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             disabled={!filterGradeId}
                         >
-                            <option value="">All Classes</option>
+                            <option value="">{t('students.selectClass')}</option>
                             {allClasses
                                 .filter(c => !filterGradeId || c.gradeID === filterGradeId)
                                 .map(cls => (
@@ -461,12 +585,12 @@ const StudentsPage = () => {
 
                 <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
                     <Users className="w-4 h-4" />
-                    <span>Total Students: <strong className="text-gray-900">{students.length}</strong></span>
+                    <span>{t('students.totalStudents')}: <strong className="text-gray-900">{students.length}</strong></span>
                 </div>
                 <div className="flex items-end">
                     <button onClick={() => { setFilterAcademicYearId(null); setFilterGradeId(null); setFilterClassId(null); }}
                         className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">
-                        <RefreshCw className="w-4 h-4" />Clear Filters
+                        <RefreshCw className="w-4 h-4" />{t('students.clearFilters')}
                     </button>
                 </div>
             </div>
@@ -478,25 +602,25 @@ const StudentsPage = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Student Code
+                                    {t('students.table.studentCode')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Full Name
+                                    {t('students.table.name')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Academic Year
+                                    {t('students.academicYear')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Grade
+                                    {t('students.grade')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Class
+                                    {t('students.class')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Photos
+                                    {t('students.table.photos')}
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
+                                    {t('students.table.actions')}
                                 </th>
                             </tr>
                         </thead>
@@ -505,7 +629,7 @@ const StudentsPage = () => {
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                                         <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                                        <p>No students found</p>
+                                        <p>{t('students.table.noStudents')}</p>
                                         <p className="text-sm mt-1">Add a new student or adjust your filters</p>
                                     </td>
                                 </tr>
@@ -533,8 +657,8 @@ const StudentsPage = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${student.photoCount > 0
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-red-100 text-red-800'
                                                 }`}>
                                                 {student.photoCount} photo{student.photoCount !== 1 ? 's' : ''}
                                             </span>
@@ -545,7 +669,7 @@ const StudentsPage = () => {
                                                 <button
                                                     onClick={() => handleOpenPhotoUpload(student)}
                                                     className="text-blue-600 hover:text-blue-900"
-                                                    title="Upload Photos"
+                                                    title={t('students.actions.uploadPhotos')}
                                                 >
                                                     <Upload className="w-5 h-5" />
                                                 </button>
@@ -554,7 +678,7 @@ const StudentsPage = () => {
                                                 <button
                                                     onClick={() => handleOpenPhotoManagement(student)}
                                                     className="text-purple-600 hover:text-purple-900"
-                                                    title="Manage Photos"
+                                                    title={t('students.actions.managePhotos')}
                                                 >
                                                     <ImageIcon className="w-5 h-5" />
                                                 </button>
@@ -563,7 +687,7 @@ const StudentsPage = () => {
                                                 <button
                                                     onClick={() => handleEnroll(student)}
                                                     className="text-green-600 hover:text-green-900"
-                                                    title="Enroll/Transfer"
+                                                    title={t('students.actions.enroll')}
                                                 >
                                                     <GraduationCap className="w-5 h-5" />
                                                 </button>
@@ -572,7 +696,7 @@ const StudentsPage = () => {
                                                 <button
                                                     onClick={() => handleEdit(student)}
                                                     className="text-indigo-600 hover:text-indigo-900"
-                                                    title="Edit Student"
+                                                    title={t('students.actions.edit')}
                                                 >
                                                     <Edit className="w-5 h-5" />
                                                 </button>
@@ -581,7 +705,7 @@ const StudentsPage = () => {
                                                 <button
                                                     onClick={() => handleDelete(student.studentID)}
                                                     className="text-red-600 hover:text-red-900"
-                                                    title="Delete Student"
+                                                    title={t('students.actions.delete')}
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
@@ -600,7 +724,7 @@ const StudentsPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
                     <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full my-8">
                         <div className="border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Add New Student</h2>
+                            <h2 className="text-xl font-bold text-gray-900">{t('students.createModal.title')}</h2>
                             <button onClick={() => { setShowCreateModal(false); resetForm(); }}
                                 className="text-gray-400 hover:text-gray-600">
                                 <X className="w-6 h-6" />
@@ -611,12 +735,12 @@ const StudentsPage = () => {
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                                     <Users className="w-5 h-5 text-blue-600" />
-                                    Student Information
+                                    {t('students.createModal.studentInformation')}
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Student Code * {formErrors.studentCode && <span className="text-red-500 text-xs">({formErrors.studentCode})</span>}
+                                            {t('students.createModal.studentCode')} * {formErrors.studentCode && <span className="text-red-500 text-xs">({formErrors.studentCode})</span>}
                                         </label>
                                         <input
                                             type="text"
@@ -626,12 +750,12 @@ const StudentsPage = () => {
                                                 student: { ...prev.student, studentCode: e.target.value }
                                             }))}
                                             className={`w-full px-3 py-2 border rounded-lg ${formErrors.studentCode ? 'border-red-500' : 'border-gray-300'}`}
-                                            placeholder="e.g., STU001"
+                                            placeholder={t("students.createModal.placeholders.studentCode")}
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Full Name * {formErrors.fullName && <span className="text-red-500 text-xs">({formErrors.fullName})</span>}
+                                            {t('students.createModal.fullName')} * {formErrors.fullName && <span className="text-red-500 text-xs">({formErrors.fullName})</span>}
                                         </label>
                                         <input
                                             type="text"
@@ -645,7 +769,7 @@ const StudentsPage = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Date of Birth * {formErrors.dateOfBirth && <span className="text-red-500 text-xs">({formErrors.dateOfBirth})</span>}
+                                            {t('students.createModal.dateOfBirth')} * {formErrors.dateOfBirth && <span className="text-red-500 text-xs">({formErrors.dateOfBirth})</span>}
                                         </label>
                                         <input
                                             type="date"
@@ -658,7 +782,7 @@ const StudentsPage = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.table.gender')}</label>
                                         <select
                                             value={formData.student.gender}
                                             onChange={(e) => setFormData(prev => ({
@@ -667,12 +791,12 @@ const StudentsPage = () => {
                                             }))}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                         >
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
+                                            <option value="Male">{t('students.table.male')}</option>
+                                            <option value="Female">{t('students.table.female')}</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.email')}</label>
                                         <input
                                             type="email"
                                             value={formData.student.email}
@@ -684,7 +808,7 @@ const StudentsPage = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.phoneNumber')}</label>
                                         <input
                                             type="text"
                                             value={formData.student.phoneNumber}
@@ -700,10 +824,10 @@ const StudentsPage = () => {
 
                             {/* Parent Information Section */}
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Parent Information</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('students.createModal.parentInformation')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Parent Name</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.parentName')}</label>
                                         <input
                                             type="text"
                                             value={formData.student.parentName}
@@ -715,7 +839,7 @@ const StudentsPage = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Parent Contact</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.parentContact')}</label>
                                         <input
                                             type="text"
                                             value={formData.student.parentContact}
@@ -727,7 +851,7 @@ const StudentsPage = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Parent Email</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.parentEmail')}</label>
                                         <input
                                             type="email"
                                             value={formData.student.parentEmail}
@@ -739,7 +863,7 @@ const StudentsPage = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Enrollment Date</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.enrollmentDate')}</label>
                                         <input
                                             type="date"
                                             value={formData.student.enrollmentDate}
@@ -752,7 +876,7 @@ const StudentsPage = () => {
                                     </div>
                                 </div>
                                 <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.address')}</label>
                                     <textarea
                                         value={formData.student.address}
                                         onChange={(e) => setFormData(prev => ({
@@ -770,7 +894,7 @@ const StudentsPage = () => {
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                                         <BookOpen className="w-5 h-5 text-green-600" />
-                                        Enrollment (Optional)
+                                        {t('students.createModal.academicEnrollment')}
                                     </h3>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
@@ -795,14 +919,14 @@ const StudentsPage = () => {
                                             }}
                                             className="w-4 h-4 text-blue-600 rounded"
                                         />
-                                        <span className="text-sm text-gray-700">Enroll student now</span>
+                                        <span className="text-sm text-gray-700">{t('students.createModal.enrollNow')}</span>
                                     </label>
                                 </div>
 
                                 {formData.enrollment && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year *</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.academicYear')} *</label>
                                             <select
                                                 value={formData.enrollment.academicYearID}
                                                 onChange={(e) => setFormData(prev => ({
@@ -824,7 +948,7 @@ const StudentsPage = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.grade')} *</label>
                                             <select
                                                 value={formData.enrollment.gradeID}
                                                 onChange={(e) => setFormData(prev => ({
@@ -837,14 +961,14 @@ const StudentsPage = () => {
                                                 }))}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                             >
-                                                <option value={0}>Select Grade</option>
+                                                <option value={0}>{t('students.selectGrade')}</option>
                                                 {grades.map(grade => (
                                                     <option key={grade.gradeID} value={grade.gradeID}>{grade.gradeName}</option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Class *</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.class')} *</label>
                                             <select
                                                 value={formData.enrollment.classID}
                                                 onChange={(e) => setFormData(prev => ({
@@ -857,14 +981,14 @@ const StudentsPage = () => {
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                                 disabled={!formData.enrollment.gradeID}
                                             >
-                                                <option value={0}>Select Class</option>
+                                                <option value={0}>{t('students.selectClass')}</option>
                                                 {filteredClasses.map(cls => (
                                                     <option key={cls.classID} value={cls.classID}>{cls.className}</option>
                                                 ))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.startDate')}</label>
                                             <input
                                                 type="date"
                                                 value={formData.enrollment.startDate}
@@ -879,7 +1003,7 @@ const StudentsPage = () => {
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.remarks')}</label>
                                             <textarea
                                                 value={formData.enrollment.remarks}
                                                 onChange={(e) => setFormData(prev => ({
@@ -905,14 +1029,14 @@ const StudentsPage = () => {
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                                     disabled={isSubmitting}
                                 >
-                                    Cancel
+                                    {t('students.createModal.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? 'Creating...' : 'Create Student'}
+                                    {isSubmitting ? <>{t('students.createModal.saving')}</> : <>{t('students.createModal.save')}</>}
                                 </button>
                             </div>
                         </form>
@@ -925,7 +1049,7 @@ const StudentsPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="border-b px-6 py-4 flex justify-between items-center sticky top-0 bg-white">
-                            <h2 className="text-xl font-bold text-gray-900">Edit Student</h2>
+                            <h2 className="text-xl font-bold text-gray-900">{t('students.editModal.title')}</h2>
                             <button onClick={() => { setShowEditModal(false); setSelectedStudent(null); }}
                                 className="text-gray-400 hover:text-gray-600">
                                 <X className="w-6 h-6" />
@@ -939,59 +1063,59 @@ const StudentsPage = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.fullName')} *</label>
                                     <input type="text" value={editFormData.fullName}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, fullName: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.dateOfBirth')} *</label>
                                     <input type="date" value={editFormData.dateOfBirth}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.table.gender')}</label>
                                     <select value={editFormData.gender}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, gender: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
+                                        <option value="Male">{t('students.table.male')}</option>
+                                        <option value="Female">{t('students.table.female')}</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.email')}</label>
                                     <input type="email" value={editFormData.email}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.phoneNumber')}</label>
                                     <input type="text" value={editFormData.phoneNumber}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Parent Contact</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.parentContact')}</label>
                                     <input type="text" value={editFormData.parentContact}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, parentContact: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Parent Name</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.parentName')}</label>
                                     <input type="text" value={editFormData.parentName}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, parentName: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Parent Email</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.parentEmail')}</label>
                                     <input type="email" value={editFormData.parentEmail}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, parentEmail: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.address')}</label>
                                 <textarea value={editFormData.address}
                                     onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
@@ -1000,11 +1124,11 @@ const StudentsPage = () => {
                             <div className="flex gap-3 pt-4">
                                 <button type="button" onClick={() => { setShowEditModal(false); setSelectedStudent(null); }}
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                                    disabled={isSubmitting}>Cancel</button>
+                                    disabled={isSubmitting}>{t('students.createModal.cancel')}</button>
                                 <button type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                                     disabled={isSubmitting}>
-                                    {isSubmitting ? 'Updating...' : 'Update Student'}
+                                    {isSubmitting ? <>{t('students.editModal.updating')}</> : <>{t('students.editModal.save')}</>}
                                 </button>
                             </div>
                         </form>
@@ -1017,7 +1141,7 @@ const StudentsPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-xl w-full">
                         <div className="border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Enroll / Transfer Student</h2>
+                            <h2 className="text-xl font-bold text-gray-900">{t('students.enrollModal.title')}</h2>
                             <button onClick={() => { setShowEnrollModal(false); setSelectedStudent(null); }}
                                 className="text-gray-400 hover:text-gray-600">
                                 <X className="w-6 h-6" />
@@ -1025,27 +1149,27 @@ const StudentsPage = () => {
                         </div>
                         <form onSubmit={handleEnrollSubmit} className="p-6 space-y-4">
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <p className="text-sm text-blue-800 font-medium mb-2">Student: {selectedStudent.fullName}</p>
+                                <p className="text-sm text-blue-800 font-medium mb-2">{t("students.enrollModal.student")}: {selectedStudent.fullName}</p>
                                 <p className="text-sm text-blue-700">
-                                    Current: {selectedStudent.className ? `${selectedStudent.gradeName} - ${selectedStudent.className}` : 'Not enrolled'}
+                                    {t("students.enrollModal.current")}: {selectedStudent.className ? `${selectedStudent.gradeName} - ${selectedStudent.className}` : 'Not enrolled'}
                                 </p>
                             </div>
 
                             {selectedStudent.className && (
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                                     <p className="text-sm text-yellow-800">
-                                        ⚠️ This will transfer the student to a new class. Previous enrollment will be marked as "Transferred".
+                                        {t("students.enrollModal.enrollInfo")}
                                     </p>
                                 </div>
                             )}
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t("students.academicYear")} *</label>
                                     <select value={enrollFormData.academicYearID}
                                         onChange={(e) => setEnrollFormData(prev => ({ ...prev, academicYearID: parseInt(e.target.value) }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value={0}>Select Year</option>
+                                        <option value={0}>{t("students.selectAcademicYear")}</option>
                                         {academicYears.map(year => (
                                             <option key={year.academicYearID} value={year.academicYearID}>
                                                 {year.yearName} {year.isActive && '(Active)'}
@@ -1054,26 +1178,26 @@ const StudentsPage = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t("students.grade")} *</label>
                                     <select value={enrollFormData.gradeID}
                                         onChange={(e) => {
                                             const gradeId = parseInt(e.target.value);
                                             setEnrollFormData(prev => ({ ...prev, gradeID: gradeId, classID: 0 }));
                                         }}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value={0}>Select Grade</option>
+                                        <option value={0}>{t('students.selectGrade')}</option>
                                         {grades.map(grade => (
                                             <option key={grade.gradeID} value={grade.gradeID}>{grade.gradeName}</option>
                                         ))}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Class *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t("students.class")} *</label>
                                     <select value={enrollFormData.classID}
                                         onChange={(e) => setEnrollFormData(prev => ({ ...prev, classID: parseInt(e.target.value) }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                         disabled={!enrollFormData.gradeID}>
-                                        <option value={0}>Select Class</option>
+                                        <option value={0}>{t('students.selectClass')}</option>
                                         {allClasses
                                             .filter(c => c.gradeID === enrollFormData.gradeID && c.academicYearID === enrollFormData.academicYearID)
                                             .map(cls => (
@@ -1082,29 +1206,29 @@ const StudentsPage = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.startDate')}</label>
                                     <input type="date" value={enrollFormData.startDate}
                                         onChange={(e) => setEnrollFormData(prev => ({ ...prev, startDate: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('students.createModal.remarks')}</label>
                                     <textarea value={enrollFormData.remarks}
                                         onChange={(e) => setEnrollFormData(prev => ({ ...prev, remarks: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                         rows={2}
-                                        placeholder="Optional notes about enrollment/transfer" />
+                                        placeholder={t("students.createModal.placeholders.remarks")} />
                                 </div>
                             </div>
 
                             <div className="flex gap-3 pt-4">
                                 <button type="button" onClick={() => { setShowEnrollModal(false); setSelectedStudent(null); }}
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                                    disabled={isSubmitting}>Cancel</button>
+                                    disabled={isSubmitting}>{t('students.createModal.cancel')}</button>
                                 <button type="submit"
                                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                                     disabled={isSubmitting}>
-                                    {isSubmitting ? 'Enrolling...' : 'Enroll Student'}
+                                    {isSubmitting ? <>{t("students.enrollModal.enrolling")}</> : <>{t("students.enrollModal.save")}</>}
                                 </button>
                             </div>
                         </form>

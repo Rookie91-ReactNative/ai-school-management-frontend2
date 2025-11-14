@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, X, Camera, CheckCircle, AlertCircle } from 'lucide-react';
 import { studentService } from '../../services/studentService';
 
@@ -11,6 +12,7 @@ interface PhotoUploadModalProps {
 }
 
 const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess }: PhotoUploadModalProps) => {
+    const { t } = useTranslation();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -34,7 +36,7 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
 
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                setErrorMessage('File size must be less than 5MB');
+                setErrorMessage(t('students.messages.errorFileSizeTooBig'));
                 return;
             }
 
@@ -71,7 +73,7 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
 
     const handleUpload = async () => {
         if (selectedFiles.length === 0) {
-            setErrorMessage('Please select at least one photo');
+            setErrorMessage(t('students.messages.errorAtLeastOnePhoto'));
             return;
         }
 
@@ -94,7 +96,7 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
         } catch (err: unknown) {
             console.error('Upload error:', err);
             setUploadStatus('error');
-            const message = err instanceof Error ? err.message : 'Failed to upload photos. Please try again.';
+            const message = err instanceof Error ? err.message : t('students.messages.errorUploading');
             setErrorMessage(message);
         } finally {
             setIsUploading(false);
@@ -117,7 +119,7 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                             <Camera className="w-6 h-6 text-blue-600" />
-                            Upload Photos
+                            {t('students.actions.uploadPhotos')}
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
                             {studentName} ({studentCode})
@@ -135,13 +137,13 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
                 <div className="p-6 space-y-6">
                     {/* Guidelines */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 className="font-semibold text-blue-900 mb-2">Photo Guidelines:</h3>
+                        <h3 className="font-semibold text-blue-900 mb-2">{t('students.uploadPhotoModal.photoGuidelines')}</h3>
                         <ul className="text-sm text-blue-800 space-y-1">
-                            <li>• Upload 3-5 clear photos for best recognition</li>
-                            <li>• Face should be clearly visible and well-lit</li>
-                            <li>• Include different angles and expressions</li>
-                            <li>• Maximum file size: 5MB per photo</li>
-                            <li>• Supported formats: JPG, PNG</li>
+                            <li>• {t('students.uploadPhotoModal.photoGuideline1')}</li>
+                            <li>• {t('students.uploadPhotoModal.photoGuideline2')}</li>
+                            <li>• {t('students.uploadPhotoModal.photoGuideline3')}</li>
+                            <li>• {t('students.uploadPhotoModal.photoGuideline4')}</li>
+                            <li>• {t('students.uploadPhotoModal.photoGuideline5')}</li>
                         </ul>
                     </div>
 
@@ -154,9 +156,9 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
                     >
                         <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-600 mb-2">
-                            <span className="font-semibold text-blue-600">Click to upload</span> or drag and drop
+                            <span className="font-semibold text-blue-600">{t('students.uploadPhotoModal.clickToUpload')}</span>{t('students.uploadPhotoModal.orDragandDrop')}
                         </p>
-                        <p className="text-sm text-gray-500">JPG or PNG (max. 5MB per file)</p>
+                        <p className="text-sm text-gray-500">{t('students.uploadPhotoModal.formatAndSize')}</p>
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -179,7 +181,7 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
                     {uploadStatus === 'success' && (
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-2">
                             <CheckCircle className="w-5 h-5 text-green-600" />
-                            <p className="text-sm text-green-800">Photos uploaded successfully!</p>
+                            <p className="text-sm text-green-800">{t('students.messages.successUploaded')}</p>
                         </div>
                     )}
 
@@ -219,7 +221,7 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
                 {/* Footer */}
                 <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-between">
                     <p className="text-sm text-gray-600">
-                        {selectedFiles.length} {selectedFiles.length === 1 ? 'photo' : 'photos'} selected
+                        {selectedFiles.length} {selectedFiles.length === 1 ? t('students.uploadPhotoModal.photo') : t('students.uploadPhotoModal.photos')} {t('students.uploadPhotoModal.selected')}
                     </p>
                     <div className="flex gap-3">
                         <button
@@ -227,7 +229,7 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
                             disabled={isUploading}
                             className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {t('students.uploadPhotoModal.cancel')}
                         </button>
                         <button
                             onClick={handleUpload}
@@ -237,12 +239,12 @@ const PhotoUploadModal = ({ studentCode, studentName, isOpen, onClose, onSuccess
                             {isUploading ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Uploading...
+                                    <>{t('students.uploadPhotoModal.uploading')}</>
                                 </>
                             ) : (
                                 <>
                                     <Upload className="w-4 h-4" />
-                                    Upload Photos
+                                        <>{t('students.uploadPhotoModal.save')}</>
                                 </>
                             )}
                         </button>

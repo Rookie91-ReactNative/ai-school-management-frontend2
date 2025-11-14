@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Camera, X, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import { authService } from '../../services/authService';
 
@@ -10,6 +11,7 @@ interface AddCameraModalProps {
 }
 
 const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         cameraName: '',
         location: '',
@@ -34,14 +36,14 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
 
         // Validation
         if (!formData.cameraName || !formData.rtspUrl) {
-            setError('Camera name and RTSP URL are required');
+            setError(t('cameras.cameraNameRequired'));
             return;
         }
 
         // Get current user's school ID
         const currentUser = authService.getCurrentUser();
         if (!currentUser?.schoolID) {
-            setError('Unable to determine school. Please log in again.');
+            setError(t('cameras.unableToGetSchool'));
             return;
         }
 
@@ -61,7 +63,7 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
             handleClose();
         } catch (err) {
             console.error('Error adding camera:', err);
-            setError('Failed to add camera. Please try again.');
+            setError(t('cameras.addCameraError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -86,9 +88,9 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                             <Camera className="w-6 h-6 text-blue-600" />
-                            Add New Camera
+                            {t('cameras.addCameraModalTitle')}
                         </h2>
-                        <p className="text-sm text-gray-600 mt-1">Configure a new camera for monitoring</p>
+                        <p className="text-sm text-gray-600 mt-1">{t('cameras.addCameraModalSubtitle')}</p>
                     </div>
                     <button
                         onClick={handleClose}
@@ -110,14 +112,14 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
                     {/* Camera Name */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Camera Name <span className="text-red-500">*</span>
+                            {t('cameras.cameraName')} <span className="text-red-500">{t('cameras.required')}</span>
                         </label>
                         <input
                             type="text"
                             name="cameraName"
                             value={formData.cameraName}
                             onChange={handleChange}
-                            placeholder="e.g., Main Gate Camera"
+                            placeholder={t('cameras.cameraNamePlaceholder')}
                             className="input-field"
                             required
                         />
@@ -125,13 +127,13 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
 
                     {/* Location */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('cameras.location')}</label>
                         <input
                             type="text"
                             name="location"
                             value={formData.location}
                             onChange={handleChange}
-                            placeholder="e.g., School Main Entrance"
+                            placeholder={t('cameras.locationPlaceholder')}
                             className="input-field"
                         />
                     </div>
@@ -139,48 +141,49 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
                     {/* RTSP URL */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            RTSP URL <span className="text-red-500">*</span>
+                            {t('cameras.rtspUrl')} <span className="text-red-500">{t('cameras.required')}</span>
                         </label>
                         <input
                             type="text"
                             name="rtspUrl"
                             value={formData.rtspUrl}
                             onChange={handleChange}
-                            placeholder="rtsp://admin:password@192.168.1.100:554/stream1"
+                            placeholder={t('cameras.rtspUrlPlaceholder')}
                             className="input-field"
                             required
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                            Example formats:
+                            {t('cameras.rtspExampleTitle')}
                             <br />
-                            • Hikvision: rtsp://admin:password@ip:554/Streaming/Channels/101
+                            • {t('cameras.rtspExampleHikvision')}
                             <br />
-                            • Dahua: rtsp://admin:password@ip:554/cam/realmonitor?channel=1
-                            <br />• For testing, use: 0 (for default webcam)
+                            • {t('cameras.rtspExampleDahua')}
+                            <br />
+                            • {t('cameras.rtspExampleWebcam')}
                         </p>
                     </div>
 
                     {/* IP Address */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">IP Address</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('cameras.ipAddress')}</label>
                         <input
                             type="text"
                             name="ipAddress"
                             value={formData.ipAddress}
                             onChange={handleChange}
-                            placeholder="192.168.1.100"
+                            placeholder={t('cameras.ipAddressPlaceholder')}
                             className="input-field"
                         />
                     </div>
 
                     {/* Guidelines */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p className="text-sm font-semibold text-blue-900 mb-1">Camera Setup Tips:</p>
+                        <p className="text-sm font-semibold text-blue-900 mb-1">{t('cameras.setupTipsTitle')}</p>
                         <ul className="text-xs text-blue-800 space-y-1">
-                            <li>• Ensure camera is accessible from this network</li>
-                            <li>• Test RTSP URL in VLC Media Player first</li>
-                            <li>• Use "0" for testing with your computer's webcam</li>
-                            <li>• Camera should have clear view of entry points</li>
+                            <li>• {t('cameras.setupTip1')}</li>
+                            <li>• {t('cameras.setupTip2')}</li>
+                            <li>• {t('cameras.setupTip3')}</li>
+                            <li>• {t('cameras.setupTip4')}</li>
                         </ul>
                     </div>
 
@@ -192,7 +195,7 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
                             disabled={isSubmitting}
                             className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {t('cameras.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -202,12 +205,12 @@ const AddCameraModal = ({ isOpen, onClose, onSuccess }: AddCameraModalProps) => 
                             {isSubmitting ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Adding...
+                                    {t('cameras.adding')}
                                 </>
                             ) : (
                                 <>
                                     <Plus className="w-4 h-4" />
-                                    Add Camera
+                                    {t('cameras.addCamera')}
                                 </>
                             )}
                         </button>

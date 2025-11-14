@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Settings, Save, /*Bell,*/ Clock, Video, AlertTriangle } from 'lucide-react';
+﻿import { useState, useEffect } from 'react';
+import { Settings, Save, Clock, Video, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import { authService } from '../services/authService';
 
@@ -11,6 +12,7 @@ interface SystemSetting {
 }
 
 const SettingsPage = () => {
+    const { t } = useTranslation();
     const [settings, setSettings] = useState<{ [key: string]: string }>({
         RecognitionThreshold: '0.65',
         SchoolStartTime: '07:30',
@@ -69,7 +71,7 @@ const SettingsPage = () => {
         try {
             const currentUser = authService.getCurrentUser();
             if (!currentUser?.schoolID) {
-                setSaveMessage('Error: No school ID found');
+                setSaveMessage(t('settings.errorNoSchool'));
                 return;
             }
 
@@ -83,11 +85,11 @@ const SettingsPage = () => {
                 settings: settingsArray
             });
 
-            setSaveMessage('Settings saved successfully!');
+            setSaveMessage(t('settings.successMessage'));
             setTimeout(() => setSaveMessage(''), 3000);
         } catch (error) {
             console.error('Error saving settings:', error);
-            setSaveMessage('Error: Failed to save settings');
+            setSaveMessage(t('settings.errorMessage'));
         } finally {
             setIsSaving(false);
         }
@@ -108,9 +110,9 @@ const SettingsPage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <Settings className="w-8 h-8 text-blue-600" />
-                        System Settings
+                        {t('settings.title')}
                     </h1>
-                    <p className="text-gray-600 mt-1">Configure system parameters and preferences</p>
+                    <p className="text-gray-600 mt-1">{t('settings.subtitle')}</p>
                 </div>
                 <button
                     onClick={handleSave}
@@ -118,15 +120,15 @@ const SettingsPage = () => {
                     className="btn-primary flex items-center gap-2"
                 >
                     <Save className="w-5 h-5" />
-                    {isSaving ? 'Saving...' : 'Save Changes'}
+                    {isSaving ? t('settings.saving') : t('settings.saveChanges')}
                 </button>
             </div>
 
             {/* Save Message */}
             {saveMessage && (
-                <div className={`p-4 rounded-lg ${saveMessage.includes('Error')
-                        ? 'bg-red-50 border border-red-200 text-red-800'
-                        : 'bg-green-50 border border-green-200 text-green-800'
+                <div className={`p-4 rounded-lg ${saveMessage.includes('Error') || saveMessage.includes('错误') || saveMessage.includes('Ralat')
+                    ? 'bg-red-50 border border-red-200 text-red-800'
+                    : 'bg-green-50 border border-green-200 text-green-800'
                     }`}>
                     {saveMessage}
                 </div>
@@ -141,8 +143,8 @@ const SettingsPage = () => {
                             <Video className="w-6 h-6 text-purple-600" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-900">Face Recognition</h2>
-                            <p className="text-sm text-gray-600">Configure face detection parameters</p>
+                            <h2 className="text-xl font-semibold text-gray-900">{t('settings.faceRecognitionTitle')}</h2>
+                            <p className="text-sm text-gray-600">{t('settings.faceRecognitionSubtitle')}</p>
                         </div>
                     </div>
 
@@ -150,7 +152,7 @@ const SettingsPage = () => {
                         {/* Recognition Threshold */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Recognition Threshold
+                                {t('settings.recognitionThreshold')}
                             </label>
                             <div className="flex items-center gap-4">
                                 <input
@@ -167,14 +169,14 @@ const SettingsPage = () => {
                                 </span>
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                                Higher values require more accurate matches (recommended: 65-75%)
+                                {t('settings.recognitionThresholdHint')}
                             </p>
                         </div>
 
                         {/* Process Frame Interval */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Process Frame Interval
+                                {t('settings.processFrameInterval')}
                             </label>
                             <div className="flex items-center gap-4">
                                 <input
@@ -185,10 +187,10 @@ const SettingsPage = () => {
                                     onChange={(e) => handleChange('ProcessFrameInterval', e.target.value)}
                                     className="input-field w-24"
                                 />
-                                <span className="text-sm text-gray-600">frames</span>
+                                <span className="text-sm text-gray-600">{t('settings.processFrameIntervalUnit')}</span>
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                                Process every Nth frame (higher = faster but less accurate)
+                                {t('settings.processFrameIntervalHint')}
                             </p>
                         </div>
                     </div>
@@ -201,8 +203,8 @@ const SettingsPage = () => {
                             <Clock className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-900">School Hours</h2>
-                            <p className="text-sm text-gray-600">Set school operating hours</p>
+                            <h2 className="text-xl font-semibold text-gray-900">{t('settings.schoolHoursTitle')}</h2>
+                            <p className="text-sm text-gray-600">{t('settings.schoolHoursSubtitle')}</p>
                         </div>
                     </div>
 
@@ -210,7 +212,7 @@ const SettingsPage = () => {
                         {/* Start Time */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                School Start Time
+                                {t('settings.schoolStartTime')}
                             </label>
                             <input
                                 type="time"
@@ -223,7 +225,7 @@ const SettingsPage = () => {
                         {/* End Time */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                School End Time
+                                {t('settings.schoolEndTime')}
                             </label>
                             <input
                                 type="time"
@@ -242,14 +244,14 @@ const SettingsPage = () => {
                             <AlertTriangle className="w-6 h-6 text-orange-600" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-900">Attendance Rules</h2>
-                            <p className="text-sm text-gray-600">Configure attendance marking rules</p>
+                            <h2 className="text-xl font-semibold text-gray-900">{t('settings.attendanceRulesTitle')}</h2>
+                            <p className="text-sm text-gray-600">{t('settings.attendanceRulesSubtitle')}</p>
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Late Threshold (minutes)
+                            {t('settings.lateThreshold')}
                         </label>
                         <div className="flex items-center gap-4">
                             <input
@@ -261,33 +263,32 @@ const SettingsPage = () => {
                                 className="input-field w-32"
                             />
                             <span className="text-sm text-gray-600">
-                                minutes after start time
+                                {t('settings.lateThresholdUnit')}
                             </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                            Students arriving after this time will be marked as late
+                            {t('settings.lateThresholdHint')}
                         </p>
                     </div>
                 </div>
 
-                {/* Notifications */}
+                {/* Notifications - Commented out in original */}
                 {/*<div className="card">*/}
                 {/*    <div className="flex items-center gap-3 mb-4">*/}
                 {/*        <div className="p-2 bg-green-100 rounded-lg">*/}
                 {/*            <Bell className="w-6 h-6 text-green-600" />*/}
                 {/*        </div>*/}
                 {/*        <div>*/}
-                {/*            <h2 className="text-xl font-semibold text-gray-900">Notifications</h2>*/}
-                {/*            <p className="text-sm text-gray-600">Manage parent notification settings</p>*/}
+                {/*            <h2 className="text-xl font-semibold text-gray-900">{t('settings.notificationsTitle')}</h2>*/}
+                {/*            <p className="text-sm text-gray-600">{t('settings.notificationsSubtitle')}</p>*/}
                 {/*        </div>*/}
                 {/*    </div>*/}
 
                 {/*    <div className="space-y-4">*/}
-                {/*        */}{/* Enable Notifications */}
                 {/*        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">*/}
                 {/*            <div>*/}
-                {/*                <h3 className="font-medium text-gray-900">Enable Parent Notifications</h3>*/}
-                {/*                <p className="text-sm text-gray-600">Send notifications to parents about attendance</p>*/}
+                {/*                <h3 className="font-medium text-gray-900">{t('settings.enableParentNotifications')}</h3>*/}
+                {/*                <p className="text-sm text-gray-600">{t('settings.enableParentNotificationsDesc')}</p>*/}
                 {/*            </div>*/}
                 {/*            <label className="relative inline-flex items-center cursor-pointer">*/}
                 {/*                <input*/}
@@ -300,11 +301,10 @@ const SettingsPage = () => {
                 {/*            </label>*/}
                 {/*        </div>*/}
 
-                {/*        */}{/* Absent Notification Time */}
                 {/*        {settings.EnableParentNotification === '1' && (*/}
                 {/*            <div>*/}
                 {/*                <label className="block text-sm font-medium text-gray-700 mb-2">*/}
-                {/*                    Absent Notification Time*/}
+                {/*                    {t('settings.absentNotificationTime')}*/}
                 {/*                </label>*/}
                 {/*                <input*/}
                 {/*                    type="time"*/}
@@ -313,7 +313,7 @@ const SettingsPage = () => {
                 {/*                    className="input-field w-48"*/}
                 {/*                />*/}
                 {/*                <p className="text-xs text-gray-500 mt-1">*/}
-                {/*                    Time to send notifications for absent students*/}
+                {/*                    {t('settings.absentNotificationTimeHint')}*/}
                 {/*                </p>*/}
                 {/*            </div>*/}
                 {/*        )}*/}

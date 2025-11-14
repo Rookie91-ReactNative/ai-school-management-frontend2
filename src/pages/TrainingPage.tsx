@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { Brain, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 
 interface TrainingResult {
@@ -10,6 +11,7 @@ interface TrainingResult {
 }
 
 const TrainingPage = () => {
+    const { t } = useTranslation();
     const [isTraining, setIsTraining] = useState(false);
     const [trainingResult, setTrainingResult] = useState<TrainingResult | null>(null);
     const [error, setError] = useState('');
@@ -24,15 +26,14 @@ const TrainingPage = () => {
             setTrainingResult(response.data.data);
         } catch (err) {
             console.error('Training error:', err);
-            setError('Failed to train model. Please try again.');
+            setError(t('training.trainingFailed'));
         } finally {
             setIsTraining(false);
         }
     };
 
     const handleTestModel = async () => {
-        // TODO: Implement test functionality
-        alert('Test functionality coming soon!');
+        alert(t('training.testComingSoon'));
     };
 
     return (
@@ -41,30 +42,30 @@ const TrainingPage = () => {
             <div>
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                     <Brain className="w-8 h-8 text-purple-600" />
-                    Face Recognition Training
+                    {t('training.title')}
                 </h1>
-                <p className="text-gray-600 mt-1">Train the AI model to recognize students</p>
+                <p className="text-gray-600 mt-1">{t('training.subtitle')}</p>
             </div>
 
             {/* Instructions Card */}
             <div className="card">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">How It Works</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">{t('training.howItWorksTitle')}</h2>
                 <div className="space-y-3 text-gray-700">
                     <p>
-                        <span className="font-semibold">1. Upload Photos:</span> Add 3-5 clear face photos for each student
+                        <span className="font-semibold">{t('training.step1Title')}</span> {t('training.step1Description')}
                     </p>
                     <p>
-                        <span className="font-semibold">2. Train Model:</span> Click the button below to train the AI
+                        <span className="font-semibold">{t('training.step2Title')}</span> {t('training.step2Description')}
                     </p>
                     <p>
-                        <span className="font-semibold">3. Start Cameras:</span> Once trained, cameras can detect students automatically
+                        <span className="font-semibold">{t('training.step3Title')}</span> {t('training.step3Description')}
                     </p>
                 </div>
             </div>
 
             {/* Training Card */}
             <div className="card">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Train Face Recognition Model</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">{t('training.trainModelTitle')}</h2>
 
                 {/* Status Messages */}
                 {error && (
@@ -78,16 +79,16 @@ const TrainingPage = () => {
                     <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <CheckCircle className="w-5 h-5 text-green-600" />
-                            <p className="font-semibold text-green-900">Training Completed Successfully!</p>
+                            <p className="font-semibold text-green-900">{t('training.trainingSuccess')}</p>
                         </div>
                         <div className="text-sm text-green-800 space-y-1">
-                            <p>✓ Total Images Processed: {trainingResult.totalImages}</p>
-                            <p>✓ Successfully Trained: {trainingResult.successfulImages}</p>
-                            <p>✓ Students Recognized: {trainingResult.totalStudents}</p>
+                            <p>✓ {t('training.totalImagesProcessed')}: {trainingResult.totalImages}</p>
+                            <p>✓ {t('training.successfullyTrained')}: {trainingResult.successfulImages}</p>
+                            <p>✓ {t('training.studentsRecognized')}: {trainingResult.totalStudents}</p>
                         </div>
                         {trainingResult.errors && trainingResult.errors.length > 0 && (
                             <div className="mt-3 text-sm text-yellow-800">
-                                <p className="font-semibold">Warnings:</p>
+                                <p className="font-semibold">{t('training.warnings')}</p>
                                 {trainingResult.errors.slice(0, 5).map((err: string, idx: number) => (
                                     <p key={idx}>• {err}</p>
                                 ))}
@@ -105,41 +106,41 @@ const TrainingPage = () => {
                     {isTraining ? (
                         <>
                             <Loader className="w-6 h-6 animate-spin" />
-                            Training Model... Please wait
+                            {t('training.trainingInProgress')}
                         </>
                     ) : (
                         <>
                             <Brain className="w-6 h-6" />
-                            Start Training
+                            {t('training.startTraining')}
                         </>
                     )}
                 </button>
 
                 {isTraining && (
                     <p className="text-center text-sm text-gray-600 mt-4">
-                        This may take 30 seconds to a few minutes depending on the number of photos...
+                        {t('training.trainingTimeNotice')}
                     </p>
                 )}
             </div>
 
             {/* Model Status Card */}
             <div className="card">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Model Status</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">{t('training.modelStatusTitle')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-600 font-medium">Model Status</p>
+                        <p className="text-sm text-blue-600 font-medium">{t('training.modelStatus')}</p>
                         <p className="text-2xl font-bold text-blue-900 mt-1">
-                            {trainingResult ? 'Trained' : 'Not Trained'}
+                            {trainingResult ? t('training.trained') : t('training.notTrained')}
                         </p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="text-sm text-green-600 font-medium">Students</p>
+                        <p className="text-sm text-green-600 font-medium">{t('training.students')}</p>
                         <p className="text-2xl font-bold text-green-900 mt-1">
                             {trainingResult?.totalStudents || 0}
                         </p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
-                        <p className="text-sm text-purple-600 font-medium">Training Images</p>
+                        <p className="text-sm text-purple-600 font-medium">{t('training.trainingImages')}</p>
                         <p className="text-2xl font-bold text-purple-900 mt-1">
                             {trainingResult?.successfulImages || 0}
                         </p>
@@ -150,16 +151,16 @@ const TrainingPage = () => {
             {/* Test Model Card */}
             {trainingResult && (
                 <div className="card">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">Test Recognition</h2>
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">{t('training.testRecognitionTitle')}</h2>
                     <p className="text-gray-600 mb-4">
-                        Upload a test photo to see if the model can recognize the student
+                        {t('training.testRecognitionDescription')}
                     </p>
                     <button
                         onClick={handleTestModel}
                         className="btn-secondary flex items-center gap-2"
                     >
                         <Brain className="w-5 h-5" />
-                        Test Model
+                        {t('training.testModel')}
                     </button>
                 </div>
             )}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Building, Plus, Edit, Trash2, X, Mail, Phone, MapPin, User, Hash } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import axios from 'axios';
 
@@ -48,6 +49,7 @@ interface SchoolEditFormData {
 }
 
 const SchoolsPage = () => {
+    const { t } = useTranslation();
     const [schools, setSchools] = useState<School[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -111,55 +113,53 @@ const SchoolsPage = () => {
         const errors: Record<string, string> = {};
 
         if (!formData.schoolCode.trim()) {
-            errors.schoolCode = 'School code is required';
+            errors.schoolCode = t('schools.validation.schoolCodeRequired');
         } else if (formData.schoolCode.length < 2) {
-            errors.schoolCode = 'School code must be at least 2 characters';
+            errors.schoolCode = t('schools.validation.schoolCodeMin');
         }
 
         if (!formData.schoolName.trim()) {
-            errors.schoolName = 'School name is required';
+            errors.schoolName = t('schools.validation.schoolNameRequired');
         } else if (formData.schoolName.length < 3) {
-            errors.schoolName = 'School name must be at least 3 characters';
+            errors.schoolName = t('schools.validation.schoolNameMin');
         }
 
         if (!formData.address.trim()) {
-            errors.address = 'Address is required';
+            errors.address = t('schools.validation.addressRequired');
         }
 
         if (!formData.city.trim()) {
-            errors.city = 'City is required';
+            errors.city = t('schools.validation.cityRequired');
         }
 
         if (!formData.state) {
-            errors.state = 'State is required';
+            errors.state = t('schools.validation.stateRequired');
         }
 
         if (!formData.postalCode.trim()) {
-            errors.postalCode = 'Postal code is required';
+            errors.postalCode = t('schools.validation.postalCodeRequired');
         } else if (!/^\d{5}$/.test(formData.postalCode)) {
-            errors.postalCode = 'Postal code must be 5 digits';
+            errors.postalCode = t('schools.validation.postalCodeFormat');
         }
 
         if (!formData.phoneNumber.trim()) {
-            errors.phoneNumber = 'Phone number is required';
-        //} else if (!/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/.test(formData.phoneNumber.replace(/\s/g, ''))) {
-        //    errors.phoneNumber = 'Invalid Malaysian phone number format';
+            errors.phoneNumber = t('schools.validation.phoneRequired');
         }
 
         if (!formData.email.trim()) {
-            errors.email = 'Email is required';
+            errors.email = t('schools.validation.emailRequired');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            errors.email = 'Invalid email format';
+            errors.email = t('schools.validation.emailFormat');
         }
 
         if (!formData.principalName.trim()) {
-            errors.principalName = 'Principal name is required';
+            errors.principalName = t('schools.validation.principalRequired');
         }
 
         if (formData.maxStudents < 50) {
-            errors.maxStudents = 'Maximum students must be at least 50';
+            errors.maxStudents = t('schools.validation.maxStudentsMin');
         } else if (formData.maxStudents > 10000) {
-            errors.maxStudents = 'Maximum students cannot exceed 10,000';
+            errors.maxStudents = t('schools.validation.maxStudentsMax');
         }
 
         setFormErrors(errors);
@@ -169,50 +169,54 @@ const SchoolsPage = () => {
     const validateEditForm = (): boolean => {
         const errors: Record<string, string> = {};
 
+        if (!editFormData.schoolCode.trim()) {
+            errors.schoolCode = t('schools.validation.schoolCodeRequired');
+        } else if (editFormData.schoolCode.length < 2) {
+            errors.schoolCode = t('schools.validation.schoolCodeMin');
+        }
+
         if (!editFormData.schoolName.trim()) {
-            errors.schoolName = 'School name is required';
+            errors.schoolName = t('schools.validation.schoolNameRequired');
         } else if (editFormData.schoolName.length < 3) {
-            errors.schoolName = 'School name must be at least 3 characters';
+            errors.schoolName = t('schools.validation.schoolNameMin');
         }
 
         if (!editFormData.address.trim()) {
-            errors.address = 'Address is required';
+            errors.address = t('schools.validation.addressRequired');
         }
 
         if (!editFormData.city.trim()) {
-            errors.city = 'City is required';
+            errors.city = t('schools.validation.cityRequired');
         }
 
         if (!editFormData.state) {
-            errors.state = 'State is required';
+            errors.state = t('schools.validation.stateRequired');
         }
 
         if (!editFormData.postalCode.trim()) {
-            errors.postalCode = 'Postal code is required';
+            errors.postalCode = t('schools.validation.postalCodeRequired');
         } else if (!/^\d{5}$/.test(editFormData.postalCode)) {
-            errors.postalCode = 'Postal code must be 5 digits';
+            errors.postalCode = t('schools.validation.postalCodeFormat');
         }
 
         if (!editFormData.phoneNumber.trim()) {
-            errors.phoneNumber = 'Phone number is required';
-        //} else if (!/^(\+?6?01)[0-46-9]-*[0-9]{7,8}$/.test(editFormData.phoneNumber.replace(/\s/g, ''))) {
-        //    errors.phoneNumber = 'Invalid Malaysian phone number format';
+            errors.phoneNumber = t('schools.validation.phoneRequired');
         }
 
         if (!editFormData.email.trim()) {
-            errors.email = 'Email is required';
+            errors.email = t('schools.validation.emailRequired');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email)) {
-            errors.email = 'Invalid email format';
+            errors.email = t('schools.validation.emailFormat');
         }
 
         if (!editFormData.principalName.trim()) {
-            errors.principalName = 'Principal name is required';
+            errors.principalName = t('schools.validation.principalRequired');
         }
 
         if (editFormData.maxStudents < 50) {
-            errors.maxStudents = 'Maximum students must be at least 50';
+            errors.maxStudents = t('schools.validation.maxStudentsMin');
         } else if (editFormData.maxStudents > 10000) {
-            errors.maxStudents = 'Maximum students cannot exceed 10,000';
+            errors.maxStudents = t('schools.validation.maxStudentsMax');
         }
 
         setFormErrors(errors);
@@ -241,7 +245,7 @@ const SchoolsPage = () => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleCreateSchool = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!validateForm()) {
@@ -250,27 +254,16 @@ const SchoolsPage = () => {
 
         setIsSubmitting(true);
         try {
-            await api.post('/school', formData);
-
-            setShowCreateModal(false);
-            setFormData({
-                schoolCode: '',
-                schoolName: '',
-                address: '',
-                city: '',
-                state: '',
-                postalCode: '',
-                phoneNumber: '',
-                email: '',
-                principalName: '',
-                maxStudents: 1000
-            });
-            setFormErrors({});
-            fetchSchools();
-            alert('School created successfully!');
+            const response = await api.post('/school', formData);
+            if (response.data.success) {
+                alert(t('schools.successCreate'));
+                setShowCreateModal(false);
+                resetForm();
+                fetchSchools();
+            }
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to create school';
+                const errorMessage = error.response?.data?.message || t('schools.errorCreate');
                 alert(errorMessage);
             }
         } finally {
@@ -278,24 +271,7 @@ const SchoolsPage = () => {
         }
     };
 
-    const handleEditClick = (school: School) => {
-        setSelectedSchool(school);
-        setEditFormData({
-            schoolCode: school.schoolCode,
-            schoolName: school.schoolName,
-            address: school.address,
-            city: school.city,
-            state: school.state,
-            postalCode: school.postalCode,
-            phoneNumber: school.phoneNumber,
-            email: school.email,
-            principalName: school.principalName,
-            maxStudents: school.maxStudents
-        });
-        setShowEditModal(true);
-    };
-
-    const handleEditSubmit = async (e: React.FormEvent) => {
+    const handleEditSchool = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!validateEditForm() || !selectedSchool) {
@@ -304,16 +280,16 @@ const SchoolsPage = () => {
 
         setIsSubmitting(true);
         try {
-            await api.put(`/school/${selectedSchool.schoolID}`, editFormData);
-
-            setShowEditModal(false);
-            setSelectedSchool(null);
-            resetEditForm();
-            fetchSchools();
-            alert('School updated successfully!');
+            const response = await api.put(`/school/${selectedSchool.schoolID}`, editFormData);
+            if (response.data.success) {
+                alert(t('schools.successUpdate'));
+                setShowEditModal(false);
+                resetEditForm();
+                fetchSchools();
+            }
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to update school';
+                const errorMessage = error.response?.data?.message || t('schools.errorUpdate');
                 alert(errorMessage);
             }
         } finally {
@@ -321,10 +297,10 @@ const SchoolsPage = () => {
         }
     };
 
-    const handleToggleStatus = async (school: School) => {
+    const handleDeleteSchool = async (school: School) => {
         const confirmMessage = school.isActive
-            ? `Are you sure you want to deactivate ${school.schoolName}?`
-            : `Are you sure you want to activate ${school.schoolName}?`;
+            ? `${t('schools.confirmDeactivate')} ${school.schoolName}?`
+            : `${t('schools.confirmActivate')} ${school.schoolName}?`;
 
         if (!window.confirm(confirmMessage)) {
             return;
@@ -333,10 +309,10 @@ const SchoolsPage = () => {
         try {
             await api.delete(`/school/${school.schoolID}`);
             fetchSchools();
-            alert(`School ${school.isActive ? 'deactivated' : 'activated'} successfully!`);
+            alert(school.isActive ? t('schools.successDeactivate') : t('schools.successActivate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to update school status';
+                const errorMessage = error.response?.data?.message || t('schools.errorUpdate');
                 alert(errorMessage);
             }
         }
@@ -374,6 +350,23 @@ const SchoolsPage = () => {
         setFormErrors({});
     };
 
+    const openEditModal = (school: School) => {
+        setSelectedSchool(school);
+        setEditFormData({
+            schoolCode: school.schoolCode,
+            schoolName: school.schoolName,
+            address: school.address,
+            city: school.city,
+            state: school.state,
+            postalCode: school.postalCode,
+            phoneNumber: school.phoneNumber,
+            email: school.email,
+            principalName: school.principalName,
+            maxStudents: school.maxStudents
+        });
+        setShowEditModal(true);
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -389,126 +382,99 @@ const SchoolsPage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <Building className="w-8 h-8 text-blue-600" />
-                        Schools Management
+                        {t('schools.title')}
                     </h1>
-                    <p className="text-gray-600 mt-1">Manage schools in the system</p>
+                    <p className="text-gray-600 mt-1">{t('schools.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    className="btn-primary flex items-center gap-2"
                 >
                     <Plus className="w-5 h-5" />
-                    Add School
+                    {t('schools.addSchool')}
                 </button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 rounded-lg">
-                            <Building className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Total Schools</p>
-                            <p className="text-2xl font-bold text-gray-900">{schools.length}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-green-100 rounded-lg">
-                            <Building className="w-6 h-6 text-green-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Active Schools</p>
-                            <p className="text-2xl font-bold text-green-900">
-                                {schools.filter(s => s.isActive).length}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-red-100 rounded-lg">
-                            <Building className="w-6 h-6 text-red-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Inactive Schools</p>
-                            <p className="text-2xl font-bold text-red-900">
-                                {schools.filter(s => !s.isActive).length}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Schools Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="card overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 border-b">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    School Code
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schools.schoolCode')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    School Name
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schools.schoolName')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Contact
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schools.city')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Status
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schools.state')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Actions
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schools.currentStudents')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schools.status')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schools.actions')}
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {schools.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                        No schools found. Create one to get started.
+                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                        {t('schools.noSchools')}
                                     </td>
                                 </tr>
                             ) : (
                                 schools.map((school) => (
                                     <tr key={school.schoolID} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {school.schoolCode}
-                                            </div>
+                                            <div className="text-sm font-medium text-gray-900">{school.schoolCode}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">{school.schoolName}</div>
-                                            <div className="text-sm text-gray-500">
-                                                {school.city}, {school.state}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">{school.phoneNumber}</div>
-                                            <div className="text-sm text-gray-500">{school.email}</div>
+                                            <div className="text-sm font-medium text-gray-900">{school.schoolName}</div>
+                                            <div className="text-sm text-gray-500">{school.principalName}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${school.isActive
+                                            <div className="text-sm text-gray-900">{school.city}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">{school.state}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">
+                                                {school.currentStudents || 0} / {school.maxStudents}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${school.isActive
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-red-100 text-red-800'
                                                 }`}>
-                                                {school.isActive ? 'Active' : 'Inactive'}
+                                                {school.isActive ? t('schools.active') : t('schools.inactive')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button onClick={() => handleEditClick(school)}
+                                            <button
+                                                onClick={() => openEditModal(school)}
                                                 className="text-blue-600 hover:text-blue-900 mr-4"
-                                                title="Edit school">
-                                                <Edit className="w-4 h-4" />
+                                            >
+                                                <Edit className="w-5 h-5 inline" />
                                             </button>
-                                            <button onClick={() => handleToggleStatus(school)}
-                                                className={school.isActive ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"}
-                                                title={school.isActive ? "Deactivate school" : "Activate school"}>
-                                                <Trash2 className="w-4 h-4" />
+                                            <button
+                                                onClick={() => handleDeleteSchool(school)}
+                                                className={`${school.isActive
+                                                        ? 'text-red-600 hover:text-red-900'
+                                                        : 'text-green-600 hover:text-green-900'
+                                                    }`}
+                                            >
+                                                <Trash2 className="w-5 h-5 inline" />
                                             </button>
                                         </td>
                                     </tr>
@@ -522,9 +488,9 @@ const SchoolsPage = () => {
             {/* Create School Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Add New School</h2>
+                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                            <h2 className="text-2xl font-bold text-gray-900">{t('schools.createSchool')}</h2>
                             <button
                                 onClick={() => { setShowCreateModal(false); resetForm(); }}
                                 className="text-gray-400 hover:text-gray-600"
@@ -533,22 +499,22 @@ const SchoolsPage = () => {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            {/* Basic Information */}
+                        <form onSubmit={handleCreateSchool} className="p-6 space-y-6">
+                            {/* School Information */}
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.schoolInformation')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Hash className="w-4 h-4 inline mr-1" />School Code *
+                                            <Hash className="w-4 h-4 inline mr-1" />{t('schools.schoolCode')} *
                                         </label>
                                         <input
                                             type="text"
                                             value={formData.schoolCode}
-                                            onChange={(e) => handleInputChange('schoolCode', e.target.value.toUpperCase())}
+                                            onChange={(e) => handleInputChange('schoolCode', e.target.value)}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.schoolCode ? 'border-red-500' : 'border-gray-300'
                                                 }`}
-                                            placeholder="SK001"
+                                            placeholder="SCH001"
                                         />
                                         {formErrors.schoolCode && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.schoolCode}</p>
@@ -557,7 +523,7 @@ const SchoolsPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Building className="w-4 h-4 inline mr-1" />School Name *
+                                            {t('schools.schoolName')} *
                                         </label>
                                         <input
                                             type="text"
@@ -565,16 +531,22 @@ const SchoolsPage = () => {
                                             onChange={(e) => handleInputChange('schoolName', e.target.value)}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.schoolName ? 'border-red-500' : 'border-gray-300'
                                                 }`}
-                                            placeholder="SJKC JIT SIN A"
+                                            placeholder="Sekolah Kebangsaan Example"
                                         />
                                         {formErrors.schoolName && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.schoolName}</p>
                                         )}
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div className="md:col-span-2">
+                            {/* Location Information */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.locationInformation')}</h3>
+                                <div className="space-y-4">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <MapPin className="w-4 h-4 inline mr-1" />Address *
+                                            <MapPin className="w-4 h-4 inline mr-1" />{t('schools.address')} *
                                         </label>
                                         <input
                                             type="text"
@@ -582,71 +554,73 @@ const SchoolsPage = () => {
                                             onChange={(e) => handleInputChange('address', e.target.value)}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.address ? 'border-red-500' : 'border-gray-300'
                                                 }`}
-                                            placeholder="123, Jalan Sekolah"
+                                            placeholder="Jalan Example 123"
                                         />
                                         {formErrors.address && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>
                                         )}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                                        <input
-                                            type="text"
-                                            value={formData.city}
-                                            onChange={(e) => handleInputChange('city', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.city ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="Kuala Lumpur"
-                                        />
-                                        {formErrors.city && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.city}</p>
-                                        )}
-                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('schools.city')} *</label>
+                                            <input
+                                                type="text"
+                                                value={formData.city}
+                                                onChange={(e) => handleInputChange('city', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.city ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                placeholder="Kuala Lumpur"
+                                            />
+                                            {formErrors.city && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.city}</p>
+                                            )}
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                                        <select
-                                            value={formData.state}
-                                            onChange={(e) => handleInputChange('state', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.state ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                        >
-                                            <option value="">Select State</option>
-                                            {malaysianStates.map(state => (
-                                                <option key={state} value={state}>{state}</option>
-                                            ))}
-                                        </select>
-                                        {formErrors.state && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.state}</p>
-                                        )}
-                                    </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('schools.state')} *</label>
+                                            <select
+                                                value={formData.state}
+                                                onChange={(e) => handleInputChange('state', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.state ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                            >
+                                                <option value="">{t('schools.selectState')}</option>
+                                                {malaysianStates.map(state => (
+                                                    <option key={state} value={state}>{state}</option>
+                                                ))}
+                                            </select>
+                                            {formErrors.state && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.state}</p>
+                                            )}
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
-                                        <input
-                                            type="text"
-                                            value={formData.postalCode}
-                                            onChange={(e) => handleInputChange('postalCode', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.postalCode ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="50000"
-                                            maxLength={5}
-                                        />
-                                        {formErrors.postalCode && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.postalCode}</p>
-                                        )}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('schools.postalCode')} *</label>
+                                            <input
+                                                type="text"
+                                                value={formData.postalCode}
+                                                onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.postalCode ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                placeholder="50000"
+                                                maxLength={5}
+                                            />
+                                            {formErrors.postalCode && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.postalCode}</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Contact Information */}
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.contactInformation')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Phone className="w-4 h-4 inline mr-1" />Phone Number *
+                                            <Phone className="w-4 h-4 inline mr-1" />{t('schools.phoneNumber')} *
                                         </label>
                                         <input
                                             type="tel"
@@ -663,7 +637,7 @@ const SchoolsPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Mail className="w-4 h-4 inline mr-1" />Email *
+                                            <Mail className="w-4 h-4 inline mr-1" />{t('schools.email')} *
                                         </label>
                                         <input
                                             type="email"
@@ -682,11 +656,11 @@ const SchoolsPage = () => {
 
                             {/* Administrative Details */}
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Administrative Details</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.administrativeDetails')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <User className="w-4 h-4 inline mr-1" />Principal Name *
+                                            <User className="w-4 h-4 inline mr-1" />{t('schools.principalName')} *
                                         </label>
                                         <input
                                             type="text"
@@ -703,7 +677,7 @@ const SchoolsPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Maximum Students *
+                                            {t('schools.maxStudents')} *
                                         </label>
                                         <input
                                             type="number"
@@ -718,7 +692,7 @@ const SchoolsPage = () => {
                                         {formErrors.maxStudents && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.maxStudents}</p>
                                         )}
-                                        <p className="text-xs text-gray-500 mt-1">Capacity: 50 - 10,000 students</p>
+                                        <p className="text-xs text-gray-500 mt-1">{t('schools.capacity')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -731,14 +705,14 @@ const SchoolsPage = () => {
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                                     disabled={isSubmitting}
                                 >
-                                    Cancel
+                                    {t('schools.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? 'Creating...' : 'Create School'}
+                                    {isSubmitting ? t('schools.creating') : t('schools.save')}
                                 </button>
                             </div>
                         </form>
@@ -747,11 +721,11 @@ const SchoolsPage = () => {
             )}
 
             {/* Edit School Modal */}
-            {showEditModal && (
+            {showEditModal && selectedSchool && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Edit School</h2>
+                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                            <h2 className="text-2xl font-bold text-gray-900">{t('schools.editSchool')}</h2>
                             <button
                                 onClick={() => { setShowEditModal(false); resetEditForm(); }}
                                 className="text-gray-400 hover:text-gray-600"
@@ -760,20 +734,22 @@ const SchoolsPage = () => {
                             </button>
                         </div>
 
-                        <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
-                            {/* Basic Information */}
+                        <form onSubmit={handleEditSchool} className="p-6 space-y-6">
+                            {/* School Information */}
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.schoolInformation')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Hash className="w-4 h-4 inline mr-1" />School Code *
+                                            <Hash className="w-4 h-4 inline mr-1" />{t('schools.schoolCode')} *
                                         </label>
                                         <input
                                             type="text"
-                                            value={editFormData.schoolCode} disabled
+                                            value={editFormData.schoolCode}
+                                            onChange={(e) => handleEditInputChange('schoolCode', e.target.value)}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.schoolCode ? 'border-red-500' : 'border-gray-300'
                                                 }`}
+                                            placeholder="SCH001"
                                         />
                                         {formErrors.schoolCode && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.schoolCode}</p>
@@ -782,7 +758,7 @@ const SchoolsPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Building className="w-4 h-4 inline mr-1" />School Name *
+                                            {t('schools.schoolName')} *
                                         </label>
                                         <input
                                             type="text"
@@ -790,16 +766,22 @@ const SchoolsPage = () => {
                                             onChange={(e) => handleEditInputChange('schoolName', e.target.value)}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.schoolName ? 'border-red-500' : 'border-gray-300'
                                                 }`}
-                                            placeholder="SJKC JIT SIN A"
+                                            placeholder="Sekolah Kebangsaan Example"
                                         />
                                         {formErrors.schoolName && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.schoolName}</p>
                                         )}
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div className="md:col-span-2">
+                            {/* Location Information */}
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.locationInformation')}</h3>
+                                <div className="space-y-4">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <MapPin className="w-4 h-4 inline mr-1" />Address *
+                                            <MapPin className="w-4 h-4 inline mr-1" />{t('schools.address')} *
                                         </label>
                                         <input
                                             type="text"
@@ -807,71 +789,73 @@ const SchoolsPage = () => {
                                             onChange={(e) => handleEditInputChange('address', e.target.value)}
                                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.address ? 'border-red-500' : 'border-gray-300'
                                                 }`}
-                                            placeholder="123, Jalan Sekolah"
+                                            placeholder="Jalan Example 123"
                                         />
                                         {formErrors.address && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>
                                         )}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                                        <input
-                                            type="text"
-                                            value={editFormData.city}
-                                            onChange={(e) => handleEditInputChange('city', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.city ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="Kuala Lumpur"
-                                        />
-                                        {formErrors.city && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.city}</p>
-                                        )}
-                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('schools.city')} *</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.city}
+                                                onChange={(e) => handleEditInputChange('city', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.city ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                placeholder="Kuala Lumpur"
+                                            />
+                                            {formErrors.city && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.city}</p>
+                                            )}
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                                        <select
-                                            value={editFormData.state}
-                                            onChange={(e) => handleEditInputChange('state', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.state ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                        >
-                                            <option value="">Select State</option>
-                                            {malaysianStates.map(state => (
-                                                <option key={state} value={state}>{state}</option>
-                                            ))}
-                                        </select>
-                                        {formErrors.state && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.state}</p>
-                                        )}
-                                    </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('schools.state')} *</label>
+                                            <select
+                                                value={editFormData.state}
+                                                onChange={(e) => handleEditInputChange('state', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.state ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                            >
+                                                <option value="">{t('schools.selectState')}</option>
+                                                {malaysianStates.map(state => (
+                                                    <option key={state} value={state}>{state}</option>
+                                                ))}
+                                            </select>
+                                            {formErrors.state && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.state}</p>
+                                            )}
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
-                                        <input
-                                            type="text"
-                                            value={editFormData.postalCode}
-                                            onChange={(e) => handleEditInputChange('postalCode', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.postalCode ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="50000"
-                                            maxLength={5}
-                                        />
-                                        {formErrors.postalCode && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.postalCode}</p>
-                                        )}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('schools.postalCode')} *</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.postalCode}
+                                                onChange={(e) => handleEditInputChange('postalCode', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.postalCode ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                placeholder="50000"
+                                                maxLength={5}
+                                            />
+                                            {formErrors.postalCode && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.postalCode}</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Contact Information */}
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.contactInformation')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Phone className="w-4 h-4 inline mr-1" />Phone Number *
+                                            <Phone className="w-4 h-4 inline mr-1" />{t('schools.phoneNumber')} *
                                         </label>
                                         <input
                                             type="tel"
@@ -888,7 +872,7 @@ const SchoolsPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Mail className="w-4 h-4 inline mr-1" />Email *
+                                            <Mail className="w-4 h-4 inline mr-1" />{t('schools.email')} *
                                         </label>
                                         <input
                                             type="email"
@@ -907,11 +891,11 @@ const SchoolsPage = () => {
 
                             {/* Administrative Details */}
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Administrative Details</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('schools.administrativeDetails')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <User className="w-4 h-4 inline mr-1" />Principal Name *
+                                            <User className="w-4 h-4 inline mr-1" />{t('schools.principalName')} *
                                         </label>
                                         <input
                                             type="text"
@@ -928,7 +912,7 @@ const SchoolsPage = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Maximum Students *
+                                            {t('schools.maxStudents')} *
                                         </label>
                                         <input
                                             type="number"
@@ -943,7 +927,7 @@ const SchoolsPage = () => {
                                         {formErrors.maxStudents && (
                                             <p className="text-red-500 text-xs mt-1">{formErrors.maxStudents}</p>
                                         )}
-                                        <p className="text-xs text-gray-500 mt-1">Capacity: 50 - 10,000 students</p>
+                                        <p className="text-xs text-gray-500 mt-1">{t('schools.capacity')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -956,14 +940,14 @@ const SchoolsPage = () => {
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                                     disabled={isSubmitting}
                                 >
-                                    Cancel
+                                    {t('schools.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? 'Updating...' : 'Edit School'}
+                                    {isSubmitting ? t('schools.updating') : t('schools.save')}
                                 </button>
                             </div>
                         </form>

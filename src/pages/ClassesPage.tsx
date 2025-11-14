@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { BookOpen, Plus, Edit, Trash2, X, Users, User, DoorOpen, Filter } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import axios from 'axios';
 
@@ -49,6 +50,7 @@ interface ClassFormData {
 }
 
 const ClassesPage = () => {
+    const { t } = useTranslation();
     const [classes, setClasses] = useState<Class[]>([]);
     const [grades, setGrades] = useState<Grade[]>([]);
     const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
@@ -137,11 +139,11 @@ const ClassesPage = () => {
     const validateForm = (): boolean => {
         const errors: Record<string, string> = {};
 
-        if (!formData.className.trim()) errors.className = 'Class name is required';
-        if (formData.gradeID === 0) errors.gradeID = 'Please select a grade';
-        if (formData.academicYearID === 0) errors.academicYearID = 'Please select an academic year';
+        if (!formData.className.trim()) errors.className = t('classes.validation.classNameRequired');
+        if (formData.gradeID === 0) errors.gradeID = t('classes.validation.gradeRequired');
+        if (formData.academicYearID === 0) errors.academicYearID = t('classes.validation.academicYearRequired');
         if (formData.maxStudents < 1 || formData.maxStudents > 50) {
-            errors.maxStudents = 'Max students must be between 1 and 50';
+            errors.maxStudents = t('classes.validation.maxStudentsRange');
         }
 
         setFormErrors(errors);
@@ -158,10 +160,10 @@ const ClassesPage = () => {
             setShowCreateModal(false);
             resetForm();
             fetchClasses();
-            alert('Class created successfully!');
+            alert(t('classes.successCreate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Failed to create class');
+                alert(error.response?.data?.message || t('classes.errorCreate'));
             }
         } finally {
             setIsSubmitting(false);
@@ -189,10 +191,10 @@ const ClassesPage = () => {
             setShowEditModal(false);
             setSelectedClass(null);
             fetchClasses();
-            alert('Class updated successfully!');
+            alert(t('classes.successUpdate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Failed to update class');
+                alert(error.response?.data?.message || t('classes.errorUpdate'));
             }
         } finally {
             setIsSubmitting(false);
@@ -201,19 +203,19 @@ const ClassesPage = () => {
 
     const handleDelete = async (classData: Class) => {
         if (classData.currentStudents > 0) {
-            alert(`Cannot delete ${classData.className}. ${classData.currentStudents} students are enrolled.`);
+            alert(t('classes.cannotDeleteWithStudents'));
             return;
         }
 
-        if (!window.confirm(`Delete ${classData.className}?`)) return;
+        if (!window.confirm(`${t('classes.confirmDelete')} ${classData.className}?`)) return;
 
         try {
             await api.delete(`/class/${classData.classID}`);
             fetchClasses();
-            alert('Class deleted successfully!');
+            alert(t('classes.successDelete'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Failed to delete class');
+                alert(error.response?.data?.message || t('classes.errorDelete'));
             }
         }
     };
@@ -245,13 +247,13 @@ const ClassesPage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <BookOpen className="w-8 h-8 text-blue-600" />
-                        Classes Management
+                        {t('classes.title')}
                     </h1>
-                    <p className="text-gray-600 mt-1">Manage school classes and assignments</p>
+                    <p className="text-gray-600 mt-1">{t('classes.subtitle')}</p>
                 </div>
                 <button onClick={() => setShowCreateModal(true)}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2">
-                    <Plus className="w-5 h-5" />Add Class
+                    <Plus className="w-5 h-5" />{t('classes.addClass')}
                 </button>
             </div>
 
@@ -259,28 +261,28 @@ const ClassesPage = () => {
             <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex items-center gap-2 mb-3">
                     <Filter className="w-5 h-5 text-gray-600" />
-                    <h3 className="font-semibold text-gray-900">Filters</h3>
+                    <h3 className="font-semibold text-gray-900">{t('classes.filters')}</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.academicYear')}</label>
                         <select value={filterAcademicYearId || ''}
                             onChange={(e) => setFilterAcademicYearId(e.target.value ? parseInt(e.target.value) : null)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                            <option value="">All Years</option>
+                            <option value="">{t('classes.allYears')}</option>
                             {academicYears.map(year => (
                                 <option key={year.academicYearID} value={year.academicYearID}>
-                                    {year.yearName} {year.isActive && '(Active)'}
+                                    {year.yearName} {year.isActive && `(${t('classes.active')})`}
                                 </option>
                             ))}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.grade')}</label>
                         <select value={filterGradeId || ''}
                             onChange={(e) => setFilterGradeId(e.target.value ? parseInt(e.target.value) : null)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                            <option value="">All Grades</option>
+                            <option value="">{t('classes.allGrades')}</option>
                             {grades.map(grade => (
                                 <option key={grade.gradeID} value={grade.gradeID}>{grade.gradeName}</option>
                             ))}
@@ -295,18 +297,18 @@ const ClassesPage = () => {
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Room</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Students</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('classes.className')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('classes.grade')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('classes.teacher')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('classes.room')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('classes.students')}</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('classes.actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {classes.length === 0 ? (
                                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                                    No classes found. Create one to get started.
+                                    {t('classes.noClasses')}
                                 </td></tr>
                             ) : (
                                 classes.map((cls) => (
@@ -340,11 +342,11 @@ const ClassesPage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex items-center gap-3">
                                                 <button onClick={() => handleEditClick(cls)}
-                                                    className="text-blue-600 hover:text-blue-900" title="Edit class">
+                                                    className="text-blue-600 hover:text-blue-900" title={t('classes.edit')}>
                                                     <Edit className="w-4 h-4" />
                                                 </button>
                                                 <button onClick={() => handleDelete(cls)}
-                                                    className="text-red-600 hover:text-red-900" title="Delete class"
+                                                    className="text-red-600 hover:text-red-900" title={t('classes.delete')}
                                                     disabled={cls.currentStudents > 0}>
                                                     <Trash2 className={`w-4 h-4 ${cls.currentStudents > 0 ? 'opacity-30 cursor-not-allowed' : ''}`} />
                                                 </button>
@@ -363,7 +365,7 @@ const ClassesPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="border-b px-6 py-4 flex justify-between items-center sticky top-0 bg-white">
-                            <h2 className="text-xl font-bold text-gray-900">Add New Class</h2>
+                            <h2 className="text-xl font-bold text-gray-900">{t('classes.createClass')}</h2>
                             <button onClick={() => { setShowCreateModal(false); resetForm(); }}
                                 className="text-gray-400 hover:text-gray-600">
                                 <X className="w-6 h-6" />
@@ -372,11 +374,11 @@ const ClassesPage = () => {
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.academicYear')} *</label>
                                     <select value={formData.academicYearID}
                                         onChange={(e) => setFormData(prev => ({ ...prev, academicYearID: parseInt(e.target.value) }))}
                                         className={`w-full px-3 py-2 border rounded-lg ${formErrors.academicYearID ? 'border-red-500' : 'border-gray-300'}`}>
-                                        <option value={0}>Select Year</option>
+                                        <option value={0}>{t('common.selectYear')}</option>
                                         {academicYears.map(year => (
                                             <option key={year.academicYearID} value={year.academicYearID}>
                                                 {year.yearName}
@@ -386,11 +388,11 @@ const ClassesPage = () => {
                                     {formErrors.academicYearID && <p className="text-red-500 text-xs mt-1">{formErrors.academicYearID}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.grade')} *</label>
                                     <select value={formData.gradeID}
                                         onChange={(e) => setFormData(prev => ({ ...prev, gradeID: parseInt(e.target.value) }))}
                                         className={`w-full px-3 py-2 border rounded-lg ${formErrors.gradeID ? 'border-red-500' : 'border-gray-300'}`}>
-                                        <option value={0}>Select Grade</option>
+                                        <option value={0}>{t('common.selectGrade')}</option>
                                         {grades.map(grade => (
                                             <option key={grade.gradeID} value={grade.gradeID}>{grade.gradeName}</option>
                                         ))}
@@ -400,7 +402,7 @@ const ClassesPage = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Class Name *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.className')} *</label>
                                     <input type="text" value={formData.className}
                                         onChange={(e) => setFormData(prev => ({ ...prev, className: e.target.value }))}
                                         className={`w-full px-3 py-2 border rounded-lg ${formErrors.className ? 'border-red-500' : 'border-gray-300'}`}
@@ -408,7 +410,7 @@ const ClassesPage = () => {
                                     {formErrors.className && <p className="text-red-500 text-xs mt-1">{formErrors.className}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.room')}</label>
                                     <input type="text" value={formData.room}
                                         onChange={(e) => setFormData(prev => ({ ...prev, room: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="A101" />
@@ -416,33 +418,34 @@ const ClassesPage = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Class Teacher</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.classTeacher')}</label>
                                     <select value={formData.classTeacherID || ''}
                                         onChange={(e) => setFormData(prev => ({ ...prev, classTeacherID: e.target.value ? parseInt(e.target.value) : null }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value="">No Teacher</option>
+                                        <option value="">{t('classes.noTeacher')}</option>
                                         {teachers.map(teacher => (
                                             <option key={teacher.userID} value={teacher.userID}>{teacher.fullName}</option>
                                         ))}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Students *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.maxStudents')} *</label>
                                     <input type="number" value={formData.maxStudents}
                                         onChange={(e) => setFormData(prev => ({ ...prev, maxStudents: parseInt(e.target.value) || 40 }))}
                                         className={`w-full px-3 py-2 border rounded-lg ${formErrors.maxStudents ? 'border-red-500' : 'border-gray-300'}`}
                                         min="1" max="50" />
                                     {formErrors.maxStudents && <p className="text-red-500 text-xs mt-1">{formErrors.maxStudents}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">{t('classes.capacity')}</p>
                                 </div>
                             </div>
                             <div className="flex gap-3 pt-4">
                                 <button type="button" onClick={() => { setShowCreateModal(false); resetForm(); }}
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                                    disabled={isSubmitting}>Cancel</button>
+                                    disabled={isSubmitting}>{t('classes.cancel')}</button>
                                 <button type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                                     disabled={isSubmitting}>
-                                    {isSubmitting ? 'Creating...' : 'Create Class'}
+                                    {isSubmitting ? t('classes.creating') : t('classes.save')}
                                 </button>
                             </div>
                         </form>
@@ -455,7 +458,7 @@ const ClassesPage = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
                         <div className="border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Edit Class</h2>
+                            <h2 className="text-xl font-bold text-gray-900">{t('classes.editClass')}</h2>
                             <button onClick={() => { setShowEditModal(false); setSelectedClass(null); }}
                                 className="text-gray-400 hover:text-gray-600">
                                 <X className="w-6 h-6" />
@@ -464,21 +467,21 @@ const ClassesPage = () => {
                         <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                 <p className="text-sm text-blue-800">
-                                    <strong>Class:</strong> {selectedClass.className} |
-                                    <strong> Grade:</strong> {selectedClass.gradeName} |
-                                    <strong> Year:</strong> {selectedClass.academicYear}
+                                    <strong>{t('classes.className')}:</strong> {selectedClass.className} |
+                                    <strong> {t('classes.grade')}:</strong> {selectedClass.gradeName} |
+                                    <strong> {t('classes.academicYear')}:</strong> {selectedClass.academicYear}
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Class Name *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.className')} *</label>
                                     <input type="text" value={editFormData.className}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, className: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                                         placeholder="4A, 5 Science 1" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.room')}</label>
                                     <input type="text" value={editFormData.room}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, room: e.target.value }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="A101" />
@@ -486,18 +489,18 @@ const ClassesPage = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Class Teacher</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.classTeacher')}</label>
                                     <select value={editFormData.classTeacherID || ''}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, classTeacherID: e.target.value ? parseInt(e.target.value) : null }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value="">No Teacher</option>
+                                        <option value="">{t('classes.noTeacher')}</option>
                                         {teachers.map(teacher => (
                                             <option key={teacher.userID} value={teacher.userID}>{teacher.fullName}</option>
                                         ))}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Students *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('classes.maxStudents')} *</label>
                                     <input type="number" value={editFormData.maxStudents}
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, maxStudents: parseInt(e.target.value) || 40 }))}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg"
@@ -507,18 +510,18 @@ const ClassesPage = () => {
                             {selectedClass.currentStudents > 0 && (
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                     <p className="text-sm text-yellow-800">
-                                        ⚠️ This class has {selectedClass.currentStudents} student(s) enrolled.
+                                        ⚠️ {t('common.thisClassHas')} {selectedClass.currentStudents} {t('common.studentsEnrolled')}
                                     </p>
                                 </div>
                             )}
                             <div className="flex gap-3 pt-4">
                                 <button type="button" onClick={() => { setShowEditModal(false); setSelectedClass(null); }}
                                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                                    disabled={isSubmitting}>Cancel</button>
+                                    disabled={isSubmitting}>{t('classes.cancel')}</button>
                                 <button type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                                     disabled={isSubmitting}>
-                                    {isSubmitting ? 'Updating...' : 'Update Class'}
+                                    {isSubmitting ? t('classes.updating') : t('classes.save')}
                                 </button>
                             </div>
                         </form>

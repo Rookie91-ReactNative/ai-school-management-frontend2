@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, Users, Edit, Trash2, X, Building, Mail, User, Lock, Phone } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import axios from 'axios';
 
@@ -47,6 +48,7 @@ interface UpdatePayload {
 }
 
 const SchoolAdminsPage = () => {
+    const { t } = useTranslation();
     const [admins, setAdmins] = useState<SchoolAdmin[]>([]);
     const [schools, setSchools] = useState<School[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -99,33 +101,33 @@ const SchoolAdminsPage = () => {
         const errors: Record<string, string> = {};
 
         if (!formData.username.trim()) {
-            errors.username = 'Username is required';
+            errors.username = t('schoolAdmins.validation.usernameRequired');
         } else if (formData.username.length < 3) {
-            errors.username = 'Username must be at least 3 characters';
+            errors.username = t('schoolAdmins.validation.usernameMin');
         }
 
         if (!formData.password) {
-            errors.password = 'Password is required';
+            errors.password = t('schoolAdmins.validation.passwordRequired');
         } else if (formData.password.length < 6) {
-            errors.password = 'Password must be at least 6 characters';
+            errors.password = t('schoolAdmins.validation.passwordMin');
         }
 
         if (formData.password !== formData.confirmPassword) {
-            errors.confirmPassword = 'Passwords do not match';
+            errors.confirmPassword = t('schoolAdmins.validation.passwordMismatch');
         }
 
         if (!formData.fullName.trim()) {
-            errors.fullName = 'Full name is required';
+            errors.fullName = t('schoolAdmins.validation.fullNameRequired');
         }
 
         if (!formData.email.trim()) {
-            errors.email = 'Email is required';
+            errors.email = t('schoolAdmins.validation.emailRequired');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            errors.email = 'Invalid email format';
+            errors.email = t('schoolAdmins.validation.emailFormat');
         }
 
         if (!formData.schoolID || formData.schoolID === 0) {
-            errors.schoolID = 'Please select a school';
+            errors.schoolID = t('schoolAdmins.validation.schoolRequired');
         }
 
         setFormErrors(errors);
@@ -136,22 +138,22 @@ const SchoolAdminsPage = () => {
         const errors: Record<string, string> = {};
 
         if (!editFormData.fullName.trim()) {
-            errors.fullName = 'Full name is required';
+            errors.fullName = t('schoolAdmins.validation.fullNameRequired');
         }
 
         if (!editFormData.email.trim()) {
-            errors.email = 'Email is required';
+            errors.email = t('schoolAdmins.validation.emailRequired');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email)) {
-            errors.email = 'Invalid email format';
+            errors.email = t('schoolAdmins.validation.emailFormat');
         }
 
         // Password validation (optional - only if password is entered)
         if (editFormData.newPassword || editFormData.confirmNewPassword) {
             if (editFormData.newPassword.length < 6) {
-                errors.newPassword = 'Password must be at least 6 characters';
+                errors.newPassword = t('schoolAdmins.validation.passwordMin');
             }
             if (editFormData.newPassword !== editFormData.confirmNewPassword) {
-                errors.confirmNewPassword = 'Passwords do not match';
+                errors.confirmNewPassword = t('schoolAdmins.validation.passwordMismatch');
             }
         }
 
@@ -192,10 +194,10 @@ const SchoolAdminsPage = () => {
             });
             setFormErrors({});
             fetchData();
-            alert('School admin created successfully!');
+            alert(t('schoolAdmins.successCreate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to create school admin';
+                const errorMessage = error.response?.data?.message || t('schoolAdmins.errorCreate');
                 alert(errorMessage);
             }
         } finally {
@@ -249,10 +251,10 @@ const SchoolAdminsPage = () => {
             });
             setFormErrors({});
             fetchData();
-            alert('School admin updated successfully!');
+            alert(t('schoolAdmins.successUpdate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to update school admin';
+                const errorMessage = error.response?.data?.message || t('schoolAdmins.errorUpdate');
                 alert(errorMessage);
             }
         } finally {
@@ -262,8 +264,8 @@ const SchoolAdminsPage = () => {
 
     const handleDeactivate = async (admin: SchoolAdmin) => {
         const confirmMessage = admin.isActive
-            ? `Are you sure you want to deactivate ${admin.fullName}?`
-            : `Are you sure you want to activate ${admin.fullName}?`;
+            ? `${t('schoolAdmins.confirmDeactivate')} ${admin.fullName}?`
+            : `${t('schoolAdmins.confirmActivate')} ${admin.fullName}?`;
 
         if (!window.confirm(confirmMessage)) {
             return;
@@ -272,10 +274,10 @@ const SchoolAdminsPage = () => {
         try {
             await api.delete(`/user/${admin.userID}`);
             fetchData();
-            alert(`School admin ${admin.isActive ? 'deactivated' : 'activated'} successfully!`);
+            alert(admin.isActive ? t('schoolAdmins.successDeactivate') : t('schoolAdmins.successActivate'));
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || 'Failed to update school admin status';
+                const errorMessage = error.response?.data?.message || t('schoolAdmins.errorStatusUpdate');
                 alert(errorMessage);
             }
         }
@@ -317,16 +319,16 @@ const SchoolAdminsPage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <Users className="w-8 h-8 text-blue-600" />
-                        School Admins Management
+                        {t('schoolAdmins.title')}
                     </h1>
-                    <p className="text-gray-600 mt-1">Manage school administrator accounts</p>
+                    <p className="text-gray-600 mt-1">{t('schoolAdmins.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                 >
                     <UserPlus className="w-5 h-5" />
-                    Add School Admin
+                    {t('schoolAdmins.addAdmin')}
                 </button>
             </div>
 
@@ -337,7 +339,7 @@ const SchoolAdminsPage = () => {
                             <Users className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Total Admins</p>
+                            <p className="text-sm text-gray-600">{t('common.totalAdmins')}</p>
                             <p className="text-2xl font-bold text-gray-900">{admins.length}</p>
                         </div>
                     </div>
@@ -348,7 +350,7 @@ const SchoolAdminsPage = () => {
                             <Users className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Active Admins</p>
+                            <p className="text-sm text-gray-600">{t('common.activeAdmins')}</p>
                             <p className="text-2xl font-bold text-green-900">
                                 {admins.filter(a => a.isActive).length}
                             </p>
@@ -361,7 +363,7 @@ const SchoolAdminsPage = () => {
                             <Building className="w-6 h-6 text-purple-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Schools Covered</p>
+                            <p className="text-sm text-gray-600">{t('common.schoolsCovered')}</p>
                             <p className="text-2xl font-bold text-purple-900">{schools.length}</p>
                         </div>
                     </div>
@@ -373,18 +375,28 @@ const SchoolAdminsPage = () => {
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin Details</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">School</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    {t('common.adminDetails')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    {t('common.contact')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    {t('schoolAdmins.school')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    {t('schoolAdmins.status')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    {t('schoolAdmins.actions')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {admins.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                        No school admins found. Create one to get started.
+                                        {t('schoolAdmins.noAdmins')}
                                     </td>
                                 </tr>
                             ) : (
@@ -412,25 +424,28 @@ const SchoolAdminsPage = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${admin.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.isActive
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
                                                 }`}>
-                                                {admin.isActive ? 'Active' : 'Inactive'}
+                                                {admin.isActive ? t('schoolAdmins.active') : t('schoolAdmins.inactive')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <button
                                                 onClick={() => handleEditClick(admin)}
                                                 className="text-blue-600 hover:text-blue-900 mr-4"
-                                                title="Edit admin"
                                             >
-                                                <Edit className="w-4 h-4" />
+                                                <Edit className="w-5 h-5 inline" />
                                             </button>
                                             <button
                                                 onClick={() => handleDeactivate(admin)}
-                                                className={admin.isActive ? "text-red-600 hover:text-red-900" : "text-green-600 hover:text-green-900"}
-                                                title={admin.isActive ? "Deactivate admin" : "Activate admin"}
+                                                className={`${admin.isActive
+                                                        ? 'text-red-600 hover:text-red-900'
+                                                        : 'text-green-600 hover:text-green-900'
+                                                    }`}
                                             >
-                                                <Trash2 className="w-4 h-4" />
+                                                <Trash2 className="w-5 h-5 inline" />
                                             </button>
                                         </td>
                                     </tr>
@@ -441,85 +456,179 @@ const SchoolAdminsPage = () => {
                 </div>
             </div>
 
+            {/* Create Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Create School Admin</h2>
-                            <button onClick={() => { setShowCreateModal(false); setFormErrors({}); }} className="text-gray-400 hover:text-gray-600">
+                            <h2 className="text-xl font-bold text-gray-900">{t('schoolAdmins.createAdmin')}</h2>
+                            <button
+                                onClick={() => { setShowCreateModal(false); setFormErrors({}); }}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="p-6 space-y-4">
+                            {/* Account Information */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Building className="w-4 h-4 inline mr-1" />School *
-                                </label>
-                                <select value={formData.schoolID} onChange={(e) => handleInputChange('schoolID', Number(e.target.value))}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.schoolID ? 'border-red-500' : 'border-gray-300'}`}>
-                                    <option value={0}>Select a school</option>
-                                    {schools.map(school => (
-                                        <option key={school.schoolID} value={school.schoolID}>{school.schoolName} ({school.schoolCode})</option>
-                                    ))}
-                                </select>
-                                {formErrors.schoolID && <p className="text-red-500 text-xs mt-1">{formErrors.schoolID}</p>}
+                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                    {t('schoolAdmins.accountInformation')}
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            <User className="w-4 h-4 inline mr-1" />{t('schoolAdmins.username')} *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.username}
+                                            onChange={(e) => handleInputChange('username', e.target.value)}
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.username ? 'border-red-500' : 'border-gray-300'
+                                                }`}
+                                            placeholder="admin123"
+                                        />
+                                        {formErrors.username && (
+                                            <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <Lock className="w-4 h-4 inline mr-1" />{t('schoolAdmins.password')} *
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={formData.password}
+                                                onChange={(e) => handleInputChange('password', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.password ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                placeholder="••••••••"
+                                            />
+                                            {formErrors.password && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {t('schoolAdmins.confirmPassword')} *
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={formData.confirmPassword}
+                                                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                placeholder="••••••••"
+                                            />
+                                            {formErrors.confirmPassword && (
+                                                <p className="text-red-500 text-xs mt-1">{formErrors.confirmPassword}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <User className="w-4 h-4 inline mr-1" />Username *
-                                </label>
-                                <input type="text" value={formData.username} onChange={(e) => handleInputChange('username', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.username ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="admin_username" />
-                                {formErrors.username && <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>}
+
+                            {/* Personal Information */}
+                            <div className="border-t pt-4">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                    {t('schoolAdmins.personalInformation')}
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t('schoolAdmins.fullName')} *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.fullName}
+                                            onChange={(e) => handleInputChange('fullName', e.target.value)}
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'
+                                                }`}
+                                            placeholder="John Doe"
+                                        />
+                                        {formErrors.fullName && (
+                                            <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            <Mail className="w-4 h-4 inline mr-1" />{t('schoolAdmins.email')} *
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => handleInputChange('email', e.target.value)}
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-500' : 'border-gray-300'
+                                                }`}
+                                            placeholder="admin@school.com"
+                                        />
+                                        {formErrors.email && (
+                                            <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            <Phone className="w-4 h-4 inline mr-1" />{t('schoolAdmins.phoneNumber')}
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phoneNumber}
+                                            onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            placeholder="+60123456789"
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                                <input type="text" value={formData.fullName} onChange={(e) => handleInputChange('fullName', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="John Doe" />
-                                {formErrors.fullName && <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>}
+
+                            {/* School Assignment */}
+                            <div className="border-t pt-4">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                    {t('schoolAdmins.schoolAssignment')}
+                                </h3>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <Building className="w-4 h-4 inline mr-1" />{t('schoolAdmins.school')} *
+                                    </label>
+                                    <select
+                                        value={formData.schoolID}
+                                        onChange={(e) => handleInputChange('schoolID', parseInt(e.target.value))}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.schoolID ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                    >
+                                        <option value={0}>{t('schoolAdmins.selectSchool')}</option>
+                                        {schools.map((school) => (
+                                            <option key={school.schoolID} value={school.schoolID}>
+                                                {school.schoolName} ({school.schoolCode})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {formErrors.schoolID && (
+                                        <p className="text-red-500 text-xs mt-1">{formErrors.schoolID}</p>
+                                    )}
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Mail className="w-4 h-4 inline mr-1" />Email *
-                                </label>
-                                <input type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="admin@school.com" />
-                                {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Phone className="w-4 h-4 inline mr-1" />Phone Number
-                                </label>
-                                <input type="tel" value={formData.phoneNumber} onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="+60123456789" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Lock className="w-4 h-4 inline mr-1" />Password *
-                                </label>
-                                <input type="password" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.password ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="••••••••" />
-                                {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Lock className="w-4 h-4 inline mr-1" />Confirm Password *
-                                </label>
-                                <input type="password" value={formData.confirmPassword} onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="••••••••" />
-                                {formErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{formErrors.confirmPassword}</p>}
-                            </div>
+
                             <div className="flex gap-3 pt-4">
-                                <button type="button" onClick={() => { setShowCreateModal(false); setFormErrors({}); }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50" disabled={isSubmitting}>Cancel</button>
-                                <button type="button" onClick={handleSubmit}
-                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Creating...' : 'Create Admin'}
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowCreateModal(false); setFormErrors({}); }}
+                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                                    disabled={isSubmitting}
+                                >
+                                    {t('schoolAdmins.cancel')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? t('schoolAdmins.creating') : t('schoolAdmins.save')}
                                 </button>
                             </div>
                         </div>
@@ -527,92 +636,148 @@ const SchoolAdminsPage = () => {
                 </div>
             )}
 
+            {/* Edit Modal */}
             {showEditModal && selectedAdmin && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Edit School Admin</h2>
-                            <button onClick={() => { setShowEditModal(false); setSelectedAdmin(null); setFormErrors({}); }}
-                                className="text-gray-400 hover:text-gray-600">
+                            <h2 className="text-xl font-bold text-gray-900">{t('schoolAdmins.editAdmin')}</h2>
+                            <button
+                                onClick={() => { setShowEditModal(false); setSelectedAdmin(null); setFormErrors({}); }}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <User className="w-4 h-4 inline mr-1" />Username
+                                    <User className="w-4 h-4 inline mr-1" />{t('schoolAdmins.username')}
                                 </label>
-                                <input type="text" value={selectedAdmin.username} disabled
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
-                                <p className="text-xs text-gray-500 mt-1">Username cannot be changed</p>
+                                <input
+                                    type="text"
+                                    value={selectedAdmin.username}
+                                    disabled
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">{t('common.usernameCannotChange')}</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Building className="w-4 h-4 inline mr-1" />School
+                                    <Building className="w-4 h-4 inline mr-1" />{t('schoolAdmins.school')}
                                 </label>
-                                <input type="text" value={selectedAdmin.schoolName} disabled
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
-                                <p className="text-xs text-gray-500 mt-1">School assignment cannot be changed</p>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                                <input type="text" value={editFormData.fullName} onChange={(e) => handleEditInputChange('fullName', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="John Doe" />
-                                {formErrors.fullName && <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>}
+                                <input
+                                    type="text"
+                                    value={selectedAdmin.schoolName}
+                                    disabled
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">{t('common.schoolCannotChange')}</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Mail className="w-4 h-4 inline mr-1" />Email *
+                                    {t('schoolAdmins.fullName')} *
                                 </label>
-                                <input type="email" value={editFormData.email} onChange={(e) => handleEditInputChange('email', e.target.value)}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="admin@school.com" />
-                                {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                                <input
+                                    type="text"
+                                    value={editFormData.fullName}
+                                    onChange={(e) => handleEditInputChange('fullName', e.target.value)}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    placeholder="John Doe"
+                                />
+                                {formErrors.fullName && (
+                                    <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    <Phone className="w-4 h-4 inline mr-1" />Phone Number
+                                    <Mail className="w-4 h-4 inline mr-1" />{t('schoolAdmins.email')} *
                                 </label>
-                                <input type="tel" value={editFormData.phoneNumber} onChange={(e) => handleEditInputChange('phoneNumber', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="+60123456789" />
+                                <input
+                                    type="email"
+                                    value={editFormData.email}
+                                    onChange={(e) => handleEditInputChange('email', e.target.value)}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    placeholder="admin@school.com"
+                                />
+                                {formErrors.email && (
+                                    <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <Phone className="w-4 h-4 inline mr-1" />{t('schoolAdmins.phoneNumber')}
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={editFormData.phoneNumber}
+                                    onChange={(e) => handleEditInputChange('phoneNumber', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="+60123456789"
+                                />
                             </div>
 
                             {/* Password Change Section */}
                             <div className="border-t pt-4 mt-4">
-                                <h3 className="text-sm font-semibold text-gray-700 mb-3">Change Password (Optional)</h3>
-                                <p className="text-xs text-gray-500 mb-3">Leave blank to keep current password</p>
+                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                    {t('schoolAdmins.changePassword')}
+                                </h3>
+                                <p className="text-xs text-gray-500 mb-3">{t('schoolAdmins.passwordOptional')}</p>
 
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Lock className="w-4 h-4 inline mr-1" />New Password
+                                            <Lock className="w-4 h-4 inline mr-1" />{t('schoolAdmins.newPassword')}
                                         </label>
-                                        <input type="password" value={editFormData.newPassword}
+                                        <input
+                                            type="password"
+                                            value={editFormData.newPassword}
                                             onChange={(e) => handleEditInputChange('newPassword', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.newPassword ? 'border-red-500' : 'border-gray-300'}`}
-                                            placeholder="••••••••" />
-                                        {formErrors.newPassword && <p className="text-red-500 text-xs mt-1">{formErrors.newPassword}</p>}
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.newPassword ? 'border-red-500' : 'border-gray-300'
+                                                }`}
+                                            placeholder="••••••••"
+                                        />
+                                        {formErrors.newPassword && (
+                                            <p className="text-red-500 text-xs mt-1">{formErrors.newPassword}</p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Lock className="w-4 h-4 inline mr-1" />Confirm New Password
+                                            <Lock className="w-4 h-4 inline mr-1" />{t('schoolAdmins.confirmNewPassword')}
                                         </label>
-                                        <input type="password" value={editFormData.confirmNewPassword}
+                                        <input
+                                            type="password"
+                                            value={editFormData.confirmNewPassword}
                                             onChange={(e) => handleEditInputChange('confirmNewPassword', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.confirmNewPassword ? 'border-red-500' : 'border-gray-300'}`}
-                                            placeholder="••••••••" />
-                                        {formErrors.confirmNewPassword && <p className="text-red-500 text-xs mt-1">{formErrors.confirmNewPassword}</p>}
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.confirmNewPassword ? 'border-red-500' : 'border-gray-300'
+                                                }`}
+                                            placeholder="••••••••"
+                                        />
+                                        {formErrors.confirmNewPassword && (
+                                            <p className="text-red-500 text-xs mt-1">{formErrors.confirmNewPassword}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex gap-3 pt-4">
-                                <button type="button" onClick={() => { setShowEditModal(false); setSelectedAdmin(null); setFormErrors({}); }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50" disabled={isSubmitting}>Cancel</button>
-                                <button type="button" onClick={handleEditSubmit}
-                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Updating...' : 'Update Admin'}
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowEditModal(false); setSelectedAdmin(null); setFormErrors({}); }}
+                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                                    disabled={isSubmitting}
+                                >
+                                    {t('schoolAdmins.cancel')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleEditSubmit}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? t('schoolAdmins.updating') : t('schoolAdmins.save')}
                                 </button>
                             </div>
                         </div>
