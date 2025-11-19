@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, Users, Edit, Trash2, X, Building, Mail, User, Lock, Phone } from 'lucide-react';
+import { UserPlus, Users, Edit, Trash2, X, Building, Mail, User, Lock, Phone, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import api from '../services/api';
 import axios from 'axios';
+import api from '../services/api';
+import PermissionsModal from '../components/SchoolAdmins/Permissionsmodal';
 
 interface School {
     schoolID: number;
@@ -54,6 +55,7 @@ const SchoolAdminsPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showPermissionsModal, setShowPermissionsModal] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState<SchoolAdmin | null>(null);
 
     const [formData, setFormData] = useState<CreateAdminForm>({
@@ -147,7 +149,6 @@ const SchoolAdminsPage = () => {
             errors.email = t('schoolAdmins.validation.emailFormat');
         }
 
-        // Password validation (optional - only if password is entered)
         if (editFormData.newPassword || editFormData.confirmNewPassword) {
             if (editFormData.newPassword.length < 6) {
                 errors.newPassword = t('schoolAdmins.validation.passwordMin');
@@ -161,6 +162,20 @@ const SchoolAdminsPage = () => {
         return Object.keys(errors).length === 0;
     };
 
+    const handleInputChange = (field: keyof CreateAdminForm, value: string | number) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (formErrors[field]) {
+            setFormErrors(prev => ({ ...prev, [field]: '' }));
+        }
+    };
+
+    const handleEditInputChange = (field: keyof EditAdminForm, value: string) => {
+        setEditFormData(prev => ({ ...prev, [field]: value }));
+        if (formErrors[field]) {
+            setFormErrors(prev => ({ ...prev, [field]: '' }));
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -168,20 +183,10 @@ const SchoolAdminsPage = () => {
             return;
         }
 
-        setIsSubmitting(true);
         try {
-            const payload = {
-                username: formData.username,
-                password: formData.password,
-                fullName: formData.fullName,
-                email: formData.email,
-                phoneNumber: formData.phoneNumber,
-                schoolID: formData.schoolID,
-                userRole: 'SchoolAdmin'
-            };
-
-            await api.post('/auth/register', payload);
-
+            setIsSubmitting(true);
+            await api.post('/auth/create-school-admin', formData);
+            alert(t('schoolAdmins.successCreate'));
             setShowCreateModal(false);
             setFormData({
                 username: '',
@@ -194,18 +199,17 @@ const SchoolAdminsPage = () => {
             });
             setFormErrors({});
             fetchData();
-            alert(t('schoolAdmins.successCreate'));
-        } catch (error: unknown) {
+        } catch (error) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || t('schoolAdmins.errorCreate');
-                alert(errorMessage);
+                console.error('Error creating admin:', error);
+                alert(error.response?.data?.message || t('students.messages.errorCreating'));
             }
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleEditClick = (admin: SchoolAdmin) => {
+    const handleEdit = (admin: SchoolAdmin) => {
         setSelectedAdmin(admin);
         setEditFormData({
             fullName: admin.fullName,
@@ -217,45 +221,31 @@ const SchoolAdminsPage = () => {
         setShowEditModal(true);
     };
 
-    const handleEditSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleEditSubmit = async () => {
+        if (!validateEditForm() || !selectedAdmin) return;
 
-        if (!validateEditForm() || !selectedAdmin) {
-            return;
-        }
-
-        setIsSubmitting(true);
         try {
-            // Prepare payload - only include password if it's being changed
+            setIsSubmitting(true);
             const payload: UpdatePayload = {
                 fullName: editFormData.fullName,
                 email: editFormData.email,
                 phoneNumber: editFormData.phoneNumber
             };
 
-            // Add password to payload if provided
-            if (editFormData.newPassword && editFormData.newPassword.trim() !== '') {
+            if (editFormData.newPassword) {
                 payload.password = editFormData.newPassword;
             }
 
             await api.put(`/user/${selectedAdmin.userID}`, payload);
-
+            alert(t('schoolAdmins.successUpdate'));
             setShowEditModal(false);
             setSelectedAdmin(null);
-            setEditFormData({
-                fullName: '',
-                email: '',
-                phoneNumber: '',
-                newPassword: '',
-                confirmNewPassword: ''
-            });
             setFormErrors({});
             fetchData();
-            alert(t('schoolAdmins.successUpdate'));
-        } catch (error: unknown) {
+        } catch (error) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || t('schoolAdmins.errorUpdate');
-                alert(errorMessage);
+                console.error('Error updating admin:', error);
+                alert(error.response?.data?.message || t('schoolAdmins.errorUpdate'));
             }
         } finally {
             setIsSubmitting(false);
@@ -263,131 +253,107 @@ const SchoolAdminsPage = () => {
     };
 
     const handleDeactivate = async (admin: SchoolAdmin) => {
-        const confirmMessage = admin.isActive
-            ? `${t('schoolAdmins.confirmDeactivate')} ${admin.fullName}?`
-            : `${t('schoolAdmins.confirmActivate')} ${admin.fullName}?`;
-
-        if (!window.confirm(confirmMessage)) {
+        if (!window.confirm(`${t('schoolAdmins.confirmDeactivate')} ${admin.fullName}?`)) {
             return;
         }
 
         try {
             await api.delete(`/user/${admin.userID}`);
+            alert(t('schoolAdmins.successDeactivate'));
             fetchData();
-            alert(admin.isActive ? t('schoolAdmins.successDeactivate') : t('schoolAdmins.successActivate'));
-        } catch (error: unknown) {
+        } catch (error) {
             if (axios.isAxiosError(error)) {
-                const errorMessage = error.response?.data?.message || t('schoolAdmins.errorStatusUpdate');
-                alert(errorMessage);
+                console.error('Error deactivating admin:', error);
+                alert(error.response?.data?.message || t('schoolAdmins.errorStatusUpdate'));
             }
         }
     };
 
-    const handleInputChange = (field: keyof CreateAdminForm, value: string | number) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (formErrors[field]) {
-            setFormErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[field];
-                return newErrors;
-            });
-        }
-    };
-
-    const handleEditInputChange = (field: keyof EditAdminForm, value: string) => {
-        setEditFormData(prev => ({ ...prev, [field]: value }));
-        if (formErrors[field]) {
-            setFormErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors[field];
-                return newErrors;
-            });
-        }
+    const handleManagePermissions = (admin: SchoolAdmin) => {
+        setSelectedAdmin(admin);
+        setShowPermissionsModal(true);
     };
 
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="text-gray-500">{t('common.loading')}</div>
             </div>
         );
     }
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <Users className="w-8 h-8 text-blue-600" />
-                        {t('schoolAdmins.title')}
-                    </h1>
-                    <p className="text-gray-600 mt-1">{t('schoolAdmins.subtitle')}</p>
+                    <h1 className="text-2xl font-bold text-gray-900">{t('schoolAdmins.title')}</h1>
+                    <p className="text-gray-500 mt-1">{t('schoolAdmins.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                     <UserPlus className="w-5 h-5" />
                     {t('schoolAdmins.addAdmin')}
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 rounded-lg">
-                            <Users className="w-6 h-6 text-blue-600" />
-                        </div>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-600">{t('common.totalAdmins')}</p>
+                            <p className="text-sm text-gray-500">{t('common.totalAdmins')}</p>
                             <p className="text-2xl font-bold text-gray-900">{admins.length}</p>
                         </div>
+                        <Users className="w-8 h-8 text-blue-500" />
                     </div>
                 </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-green-100 rounded-lg">
-                            <Users className="w-6 h-6 text-green-600" />
-                        </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-600">{t('common.activeAdmins')}</p>
-                            <p className="text-2xl font-bold text-green-900">
+                            <p className="text-sm text-gray-500">{t('common.activeAdmins')}</p>
+                            <p className="text-2xl font-bold text-green-600">
                                 {admins.filter(a => a.isActive).length}
                             </p>
                         </div>
+                        <Users className="w-8 h-8 text-green-500" />
                     </div>
                 </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-purple-100 rounded-lg">
-                            <Building className="w-6 h-6 text-purple-600" />
-                        </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-600">{t('common.schoolsCovered')}</p>
-                            <p className="text-2xl font-bold text-purple-900">{schools.length}</p>
+                            <p className="text-sm text-gray-500">{t('common.schoolsCovered')}</p>
+                            <p className="text-2xl font-bold text-gray-900">{schools.length}</p>
                         </div>
+                        <Building className="w-8 h-8 text-purple-500" />
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Admins Table */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-50 border-b">
+                        <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    {t('common.adminDetails')}
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schoolAdmins.username')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    {t('common.contact')}
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schoolAdmins.fullName')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {t('schoolAdmins.email')}
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {t('schoolAdmins.school')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {t('schoolAdmins.status')}
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {t('schoolAdmins.actions')}
                                 </th>
                             </tr>
@@ -395,58 +361,57 @@ const SchoolAdminsPage = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {admins.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                                         {t('schoolAdmins.noAdmins')}
                                     </td>
                                 </tr>
                             ) : (
                                 admins.map((admin) => (
                                     <tr key={admin.userID} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                                    <User className="w-5 h-5 text-blue-600" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-gray-900">{admin.fullName}</div>
-                                                    <div className="text-sm text-gray-500">@{admin.username}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">{admin.email}</div>
-                                            <div className="text-sm text-gray-500">{admin.phoneNumber || '-'}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <Building className="w-4 h-4 text-gray-400" />
-                                                <span className="text-sm text-gray-900">{admin.schoolName}</span>
-                                            </div>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">{admin.username}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.isActive
+                                            <div className="text-sm text-gray-900">{admin.fullName}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-500">{admin.email}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">{admin.schoolName}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${admin.isActive
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-red-100 text-red-800'
                                                 }`}>
                                                 {admin.isActive ? t('schoolAdmins.active') : t('schoolAdmins.inactive')}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button
-                                                onClick={() => handleEditClick(admin)}
-                                                className="text-blue-600 hover:text-blue-900 mr-4"
-                                            >
-                                                <Edit className="w-5 h-5 inline" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeactivate(admin)}
-                                                className={`${admin.isActive
-                                                        ? 'text-red-600 hover:text-red-900'
-                                                        : 'text-green-600 hover:text-green-900'
-                                                    }`}
-                                            >
-                                                <Trash2 className="w-5 h-5 inline" />
-                                            </button>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleManagePermissions(admin)}
+                                                    className="text-purple-600 hover:text-purple-900"
+                                                    title={t('schoolAdmins.managePermissions')}
+                                                >
+                                                    <Shield className="w-5 h-5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleEdit(admin)}
+                                                    className="text-blue-600 hover:text-blue-900"
+                                                    title={t('schoolAdmins.edit')}
+                                                >
+                                                    <Edit className="w-5 h-5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeactivate(admin)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                    title={t('schoolAdmins.deactivate')}
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -469,125 +434,113 @@ const SchoolAdminsPage = () => {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            {/* Account Information */}
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
                                     {t('schoolAdmins.accountInformation')}
                                 </h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <User className="w-4 h-4 inline mr-1" />{t('schoolAdmins.username')} *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.username}
-                                            onChange={(e) => handleInputChange('username', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.username ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="admin123"
-                                        />
-                                        {formErrors.username && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                <Lock className="w-4 h-4 inline mr-1" />{t('schoolAdmins.password')} *
-                                            </label>
-                                            <input
-                                                type="password"
-                                                value={formData.password}
-                                                onChange={(e) => handleInputChange('password', e.target.value)}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.password ? 'border-red-500' : 'border-gray-300'
-                                                    }`}
-                                                placeholder="••••••••"
-                                            />
-                                            {formErrors.password && (
-                                                <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                {t('schoolAdmins.confirmPassword')} *
-                                            </label>
-                                            <input
-                                                type="password"
-                                                value={formData.confirmPassword}
-                                                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                                                    }`}
-                                                placeholder="••••••••"
-                                            />
-                                            {formErrors.confirmPassword && (
-                                                <p className="text-red-500 text-xs mt-1">{formErrors.confirmPassword}</p>
-                                            )}
-                                        </div>
-                                    </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <User className="w-4 h-4 inline mr-1" />{t('schoolAdmins.username')} *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.username}
+                                        onChange={(e) => handleInputChange('username', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.username ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                        placeholder="admin.john"
+                                    />
+                                    {formErrors.username && (
+                                        <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <Lock className="w-4 h-4 inline mr-1" />{t('schoolAdmins.password')} *
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(e) => handleInputChange('password', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.password ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                        placeholder="••••••••"
+                                    />
+                                    {formErrors.password && (
+                                        <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <Lock className="w-4 h-4 inline mr-1" />{t('schoolAdmins.confirmPassword')} *
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={formData.confirmPassword}
+                                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                        placeholder="••••••••"
+                                    />
+                                    {formErrors.confirmPassword && (
+                                        <p className="text-red-500 text-xs mt-1">{formErrors.confirmPassword}</p>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Personal Information */}
-                            <div className="border-t pt-4">
-                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                            <div className="space-y-4 pt-4">
+                                <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
                                     {t('schoolAdmins.personalInformation')}
                                 </h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            {t('schoolAdmins.fullName')} *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.fullName}
-                                            onChange={(e) => handleInputChange('fullName', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="John Doe"
-                                        />
-                                        {formErrors.fullName && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Mail className="w-4 h-4 inline mr-1" />{t('schoolAdmins.email')} *
-                                        </label>
-                                        <input
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => handleInputChange('email', e.target.value)}
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                            placeholder="admin@school.com"
-                                        />
-                                        {formErrors.email && (
-                                            <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            <Phone className="w-4 h-4 inline mr-1" />{t('schoolAdmins.phoneNumber')}
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            value={formData.phoneNumber}
-                                            onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                            placeholder="+60123456789"
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {t('schoolAdmins.fullName')} *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.fullName}
+                                        onChange={(e) => handleInputChange('fullName', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                        placeholder="John Doe"
+                                    />
+                                    {formErrors.fullName && (
+                                        <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <Mail className="w-4 h-4 inline mr-1" />{t('schoolAdmins.email')} *
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${formErrors.email ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                        placeholder="admin@school.com"
+                                    />
+                                    {formErrors.email && (
+                                        <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <Phone className="w-4 h-4 inline mr-1" />{t('schoolAdmins.phoneNumber')}
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        value={formData.phoneNumber}
+                                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        placeholder="+60123456789"
+                                    />
                                 </div>
                             </div>
 
-                            {/* School Assignment */}
-                            <div className="border-t pt-4">
-                                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                            <div className="space-y-4 pt-4">
+                                <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
                                     {t('schoolAdmins.schoolAssignment')}
                                 </h3>
                                 <div>
@@ -623,15 +576,14 @@ const SchoolAdminsPage = () => {
                                     {t('schoolAdmins.cancel')}
                                 </button>
                                 <button
-                                    type="button"
-                                    onClick={handleSubmit}
+                                    type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting ? t('schoolAdmins.creating') : t('schoolAdmins.save')}
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             )}
@@ -719,7 +671,6 @@ const SchoolAdminsPage = () => {
                                 />
                             </div>
 
-                            {/* Password Change Section */}
                             <div className="border-t pt-4 mt-4">
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
                                     {t('schoolAdmins.changePassword')}
@@ -783,6 +734,23 @@ const SchoolAdminsPage = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Permissions Modal */}
+            {selectedAdmin && (
+                <PermissionsModal
+                    userId={selectedAdmin.userID}
+                    userName={selectedAdmin.fullName}
+                    userRole="SchoolAdmin"
+                    isOpen={showPermissionsModal}
+                    onClose={() => {
+                        setShowPermissionsModal(false);
+                        setSelectedAdmin(null);
+                    }}
+                    onSave={() => {
+                        console.log('Permissions saved successfully');
+                    }}
+                />
             )}
         </div>
     );

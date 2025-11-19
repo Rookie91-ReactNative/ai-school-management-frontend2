@@ -1,9 +1,45 @@
 import api from './api';
 import type { Student, ApiResponse, CreateStudentDto, FaceImage } from '../types';
 
+/**
+ * Extended Student interface with academic information
+ * Used when student data includes current grade and class enrollment
+ */
+export interface StudentWithAcademic extends Student {
+    gradeName?: string;
+    className?: string;
+    gradeID?: number;
+    classID?: number;
+    academicYear?: string;
+    academicYearID?: number;
+}
+
 export const studentService = {
-    getAllStudents: async (): Promise<Student[]> => {
-        const response = await api.get<ApiResponse<Student[]>>('/student');
+    getAllStudents: async (): Promise<StudentWithAcademic[]> => {
+        const response = await api.get<ApiResponse<StudentWithAcademic[]>>('/student');
+        return response.data.data;
+    },
+
+    /**
+     * Get students by school with academic information (className, gradeName, etc.)
+     * @param schoolId - School ID
+     * @param academicYearId - Optional: Filter by academic year
+     * @param gradeId - Optional: Filter by grade
+     * @param classId - Optional: Filter by class
+     */
+    getStudentsBySchool: async (
+        schoolId: number,
+        academicYearId?: number,
+        gradeId?: number,
+        classId?: number
+    ): Promise<StudentWithAcademic[]> => {
+        const params = new URLSearchParams();
+        if (academicYearId) params.append('academicYearId', academicYearId.toString());
+        if (gradeId) params.append('gradeId', gradeId.toString());
+        if (classId) params.append('classId', classId.toString());
+
+        const url = `/student/school/${schoolId}${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await api.get<ApiResponse<StudentWithAcademic[]>>(url);
         return response.data.data;
     },
 

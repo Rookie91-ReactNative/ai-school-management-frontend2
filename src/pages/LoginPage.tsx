@@ -21,7 +21,7 @@ const LoginPage = () => {
         setIsLoading(true);
 
         try {
-            await login({ username, password });
+            await login(username, password);
             navigate('/dashboard');
         } catch (err: unknown) {
             const errorMessage = err instanceof Error

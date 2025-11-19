@@ -17,6 +17,7 @@ interface AuthResponse {
         userRole: string;
         schoolID: number;
         schoolName: string;
+        permissions: string[];  // ← Added permissions array
     };
 }
 
@@ -28,7 +29,7 @@ class AuthService {
 
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
         try {
-            const response = await api.post('/auth/login', credentials);
+            const response = await api.post('/Auth/login', credentials);
             const data = response.data.data;
 
             // Store tokens in localStorage for persistent sessions
@@ -40,8 +41,9 @@ class AuthService {
             const expiryTime = new Date().getTime() + (8 * 60 * 60 * 1000); // 8 hours
             localStorage.setItem(this.TOKEN_EXPIRY_KEY, expiryTime.toString());
 
+            console.log('Login successful - User permissions:', data.user.permissions);
             return data;
-        } catch (error: unknown) {
+        } catch (error) {
             if (axios.isAxiosError(error)) {
                 const message = error.response?.data?.message || 'Login failed';
                 throw new Error(message);
@@ -74,21 +76,62 @@ class AuthService {
     getCurrentUser(): AuthResponse['user'] | null {
         const userStr = localStorage.getItem(this.USER_KEY);
 
-        //console.log('getCurrentUser - Raw user string from localStorage:', userStr);
-
         if (!userStr) {
-            //console.log('getCurrentUser - No user data found in localStorage');
             return null;
         }
 
         try {
             const user = JSON.parse(userStr);
-            //console.log('getCurrentUser - Parsed user:', user);
+
+            // Ensure permissions array exists (backward compatibility)
+            if (!user.permissions) {
+                user.permissions = [];
+            }
+
             return user;
         } catch (error) {
             console.error('getCurrentUser - Error parsing user data:', error);
             return null;
         }
+    }
+
+    /**
+     * Get user's permissions
+     * @returns Array of permission strings
+     */
+    getPermissions(): string[] {
+        const user = this.getCurrentUser();
+        return user?.permissions || [];
+    }
+
+    /**
+     * Check if user has a specific permission
+     * @param permission - Permission to check (e.g., "ManageStudents")
+     * @returns true if user has the permission
+     */
+    hasPermission(permission: string): boolean {
+        const permissions = this.getPermissions();
+        return permissions.includes(permission);
+    }
+
+    /**
+     * Check if user has any of the specified permissions
+     * @param permissionList - Array of permissions to check
+     * @returns true if user has at least one permission
+     */
+    hasAnyPermission(permissionList: string[]): boolean {
+        const permissions = this.getPermissions();
+        return permissionList.some(perm => permissions.includes(perm));
+    }
+
+    /**
+     * Check if user has all of the specified permissions
+     * @param permissionList - Array of permissions to check
+     * @returns true if user has all permissions
+     */
+    hasAllPermissions(permissionList: string[]): boolean {
+        const permissions = this.getPermissions();
+        return permissionList.every(perm => permissions.includes(perm));
     }
 
     isAuthenticated(): boolean {

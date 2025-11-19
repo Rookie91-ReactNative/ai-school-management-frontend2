@@ -2,7 +2,7 @@
 import {
     LogOut, LayoutDashboard, Users, ClipboardList, Video,
     Brain, Settings, Building, UserPlus, Calendar, GraduationCap,
-    BookOpen
+    BookOpen, UserCircle, Proportions
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -14,34 +14,156 @@ const Layout = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const currentUser = authService.getCurrentUser();
+    const userPermissions = currentUser?.permissions || [];
+    //console.log('currentUser?.permissions:', currentUser?.permissions);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
-    // Define navigation items based on role with translations
-    const getSuperAdminNavigation = () => [
-        { path: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
-        { path: '/schools', icon: Building, label: t('nav.schools') },
-        { path: '/school-admins', icon: UserPlus, label: t('nav.users') },
+    // Helper function to check if user has permission
+    const hasPermission = (permission: string): boolean => {
+        return userPermissions.includes(permission);
+    };
+
+    // Define navigation items with their required permissions
+    const allNavigationItems = [
+        // Dashboard - always visible for authenticated users
+        {
+            path: '/dashboard',
+            icon: LayoutDashboard,
+            label: t('nav.dashboard'),
+            permission: null, // No specific permission required
+            roles: ['SuperAdmin', 'SchoolAdmin', 'Teacher', 'Staff']
+        },
+        // SuperAdmin specific
+        {
+            path: '/schools',
+            icon: Building,
+            label: t('nav.schools'),
+            permission: 'ManageSchools',
+            roles: ['SuperAdmin']
+        },
+        {
+            path: '/school-admins',
+            icon: UserPlus,
+            label: t('nav.users'),
+            permission: 'ManageUsers',
+            roles: ['SuperAdmin']
+        },
+        // School Management
+        {
+            path: '/teachers',
+            icon: UserCircle,  
+            label: t('nav.teachers'),
+            permission: 'ManageTeachers',
+            roles: ['SchoolAdmin']
+        },
+        {
+            path: '/teams',
+            icon: Users,
+            label: t('nav.teams'),
+            permission: 'ManageTeams',
+            roles: ['SchoolAdmin', 'Teacher']
+        },
+        {
+            path: '/academic-years',
+            icon: Calendar,
+            label: t('nav.academicYears'),
+            permission: 'ManageAcademicYears',
+            roles: ['SchoolAdmin']
+        },
+        {
+            path: '/grades',
+            icon: GraduationCap,
+            label: t('nav.grades'),
+            permission: 'ManageGrades',
+            roles: ['SchoolAdmin']
+        },
+        {
+            path: '/classes',
+            icon: BookOpen,
+            label: t('nav.classes'),
+            permission: 'ManageClasses',
+            roles: ['SchoolAdmin']
+        },
+        {
+            path: '/students',
+            icon: Users,
+            label: t('nav.students'),
+            permission: 'ManageStudents', // SchoolAdmin needs this
+            alternativePermission: 'ViewStudents', // Teacher/Staff can view
+            roles: ['SchoolAdmin', 'Teacher', 'Staff']
+        },
+        {
+            path: '/attendance',
+            icon: ClipboardList,
+            label: t('nav.attendance'),
+            permission: 'ViewAttendance',
+            alternativePermission: 'ViewAttendanceRecords',
+            roles: ['SchoolAdmin', 'Teacher', 'Staff']
+        },
+        {
+            path: '/cameras',
+            icon: Video,
+            label: t('nav.cameras'),
+            permission: 'ManageCameras',
+            roles: ['SchoolAdmin']
+        },
+        {
+            path: '/training',
+            icon: Brain,
+            label: t('nav.training'),
+            permission: 'TrainFaceRecognition',
+            roles: ['SchoolAdmin']
+        },
+        {
+            path: '/settings',
+            icon: Settings,
+            label: t('nav.settings'),
+            permission: 'SystemConfiguration',
+            roles: ['SchoolAdmin']
+        },
+        {
+            path: '/events',
+            icon: Calendar,
+            label: t('nav.events'),
+            permission: null,
+            roles: ['SchoolAdmin', 'Teacher']
+        },
+        {
+            path: '/event-report',
+            icon: Proportions,
+            label: t('nav.eventsReport'),
+            permission: 'EventReports',
+            roles: ['SchoolAdmin', 'Teacher']
+        },
     ];
 
-    const getSchoolAdminNavigation = () => [
-        { path: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard') },
-        { path: '/academic-years', icon: Calendar, label: t('nav.academicYears') },
-        { path: '/grades', icon: GraduationCap, label: t('nav.grades') },
-        { path: '/classes', icon: BookOpen, label: t('nav.classes') },
-        { path: '/students', icon: Users, label: t('nav.students') },
-        { path: '/attendance', icon: ClipboardList, label: t('nav.attendance') },
-        { path: '/cameras', icon: Video, label: t('nav.cameras') },
-        { path: '/training', icon: Brain, label: t('nav.training') },
-        { path: '/settings', icon: Settings, label: t('nav.settings') },
-    ];
+    // Filter navigation items based on:
+    // 1. User's role
+    // 2. User's permissions
+    const getFilteredNavigation = () => {
+        return allNavigationItems.filter(item => {
+            // Check if user's role is in the allowed roles
+            const hasRole = item.roles.includes(currentUser?.userRole || '');
+            if (!hasRole) return false;
 
-    const navigationItems = currentUser?.userRole === 'SuperAdmin'
-        ? getSuperAdminNavigation()
-        : getSchoolAdminNavigation();
+            // If no specific permission required, show the item
+            if (!item.permission) return true;
+
+            // Check if user has the required permission or alternative permission
+            const hasPrimaryPermission = hasPermission(item.permission);
+            const hasAlternativePermission = item.alternativePermission
+                ? hasPermission(item.alternativePermission)
+                : false;
+
+            return hasPrimaryPermission || hasAlternativePermission;
+        });
+    };
+
+    const navigationItems = getFilteredNavigation();
 
     return (
         <div className="flex h-screen bg-gray-50">
@@ -59,21 +181,27 @@ const Layout = () => {
 
                 {/* Navigation */}
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {navigationItems.map((item) => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-700 hover:bg-gray-100'
-                                }`
-                            }
-                        >
-                            <item.icon className="w-5 h-5" />
-                            <span className="font-medium">{item.label}</span>
-                        </NavLink>
-                    ))}
+                    {navigationItems.length > 0 ? (
+                        navigationItems.map((item) => (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) =>
+                                    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                                        ? 'bg-blue-600 text-white'
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                    }`
+                                }
+                            >
+                                <item.icon className="w-5 h-5" />
+                                <span className="font-medium">{item.label}</span>
+                            </NavLink>
+                        ))
+                    ) : (
+                        <div className="text-center text-gray-500 text-sm py-4">
+                            {t('nav.noAccess')}
+                        </div>
+                    )}
                 </nav>
 
                 {/* User Info, Language Switcher & Logout */}

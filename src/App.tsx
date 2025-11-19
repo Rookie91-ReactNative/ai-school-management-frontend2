@@ -1,141 +1,206 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { useAuth } from './hooks/useAuth';
-import { authService } from './services/authService';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+import UnauthorizedPage from './pages/UnauthorizedPage';
+
+// Pages
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import StudentsPage from './pages/StudentsPage';
-import AttendancePage from './pages/AttendancePage';
-import TrainingPage from './pages/TrainingPage';
-import CamerasPage from './pages/CamerasPage';
-import SettingsPage from './pages/SettingsPage';
 import SchoolsPage from './pages/SchoolsPage';
 import SchoolAdminsPage from './pages/SchoolAdminsPage';
 import AcademicYearsPage from './pages/AcademicYearsPage';
 import GradesPage from './pages/GradesPage';
 import ClassesPage from './pages/ClassesPage';
-import LoadingSpinner from './components/Common/LoadingSpinner';
-
-// Session Monitor Component
-const SessionMonitor = () => {
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        // Check session expiry every minute
-        const checkSession = () => {
-            if (authService.isTokenExpired()) {
-                authService.logout();
-                navigate('/login', { replace: true });
-                alert('Your session has expired. Please log in again.');
-            }
-        };
-
-        // Check immediately
-        checkSession();
-
-        // Set up interval to check every minute
-        const interval = setInterval(checkSession, 60000); // Check every 1 minute
-
-        // Extend session on user activity
-        const handleActivity = () => {
-            authService.extendSession();
-        };
-
-        // Listen for user activity
-        window.addEventListener('mousemove', handleActivity);
-        window.addEventListener('keydown', handleActivity);
-        window.addEventListener('click', handleActivity);
-
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener('mousemove', handleActivity);
-            window.removeEventListener('keydown', handleActivity);
-            window.removeEventListener('click', handleActivity);
-        };
-    }, [navigate]);
-
-    return null;
-};
-
-// Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const { isAuthenticated, isLoading } = useAuth();
-
-    if (isLoading) {
-        return <LoadingSpinner />;
-    }
-
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
-
-    return (
-        <>
-            <SessionMonitor />
-            {children}
-        </>
-    );
-};
-
-// Public Route Component (redirect if already logged in)
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-    const { isAuthenticated, isLoading } = useAuth();
-
-    if (isLoading) {
-        return <LoadingSpinner />;
-    }
-
-    if (isAuthenticated) {
-        return <Navigate to="/dashboard" replace />;
-    }
-
-    return <>{children}</>;
-};
+import StudentsPage from './pages/StudentsPage';
+import AttendancePage from './pages/AttendancePage';
+import CamerasPage from './pages/CamerasPage';
+import TrainingPage from './pages/TrainingPage';
+import SettingsPage from './pages/SettingsPage';
+import TeachersPage from './pages/TeachersPage';
+import TeamsPage from './pages/TeamsPage';
+import EventsPage from './pages/EventsPage';
+import EventReportPage from './pages/EventReportPage';
 
 function App() {
     return (
         <BrowserRouter>
-            <AuthProvider>
-                <Routes>
-                    {/* Public Routes */}
+            <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+                {/* Protected Routes */}
+                <Route element={<Layout />}>
+                    {/* Dashboard - Accessible to all authenticated users */}
                     <Route
-                        path="/login"
+                        path="/dashboard"
                         element={
-                            <PublicRoute>
-                                <LoginPage />
-                            </PublicRoute>
+                            <ProtectedRoute>
+                                <DashboardPage />
+                            </ProtectedRoute>
                         }
                     />
 
-                    {/* Protected Routes */}
+                    {/* SuperAdmin Only Routes */}
                     <Route
-                        path="/"
+                        path="/schools"
                         element={
-                            <ProtectedRoute>
-                                <Layout />
+                            <ProtectedRoute
+                                requiredPermission="ManageSchools"
+                                requiredRole={['SuperAdmin']}
+                            >
+                                <SchoolsPage />
                             </ProtectedRoute>
                         }
-                    >
-                        <Route index element={<Navigate to="/dashboard" replace />} />
-                        <Route path="dashboard" element={<DashboardPage />} />
-                        <Route path="schools" element={<SchoolsPage />} />
-                        <Route path="school-admins" element={<SchoolAdminsPage />} />
-                        <Route path="academic-years" element={<AcademicYearsPage />} />
-                        <Route path="grades" element={<GradesPage />} />
-                        <Route path="classes" element={<ClassesPage />} />
-                        <Route path="students" element={<StudentsPage />} />
-                        <Route path="attendance" element={<AttendancePage />} />
-                        <Route path="training" element={<TrainingPage />} />
-                        <Route path="cameras" element={<CamerasPage />} />
-                        <Route path="settings" element={<SettingsPage />} />
-                    </Route>
+                    />
+                    <Route
+                        path="/school-admins"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ManageUsers"
+                                requiredRole={['SuperAdmin']}
+                            >
+                                <SchoolAdminsPage />
+                            </ProtectedRoute>
+                        }
+                    />
 
-                    {/* 404 Route */}
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                </Routes>
-            </AuthProvider>
+                    {/* School Management Routes */}
+                    <Route
+                        path="/teachers"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ManageTeachers"
+                                requiredRole={['SchoolAdmin']}
+                            >
+                                <TeachersPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/teams"
+                        element={
+                            <ProtectedRoute requiredPermission="ManageTeams">
+                                <TeamsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route path="/event-report"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="EventReports"
+                                requiredRole={['SchoolAdmin']}>
+                                <EventReportPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/academic-years"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ManageAcademicYears"
+                                requiredRole={['SchoolAdmin']}
+                            >
+                                <AcademicYearsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/grades"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ManageGrades"
+                                requiredRole={['SchoolAdmin']}
+                            >
+                                <GradesPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/classes"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ManageClasses"
+                                requiredRole={['SchoolAdmin']}
+                            >
+                                <ClassesPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/students"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ManageStudents"
+                                alternativePermission="ViewStudents"
+                                requiredRole={['SchoolAdmin', 'Teacher', 'Staff']}
+                            >
+                                <StudentsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/attendance"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ViewAttendance"
+                                alternativePermission="ViewAttendanceRecords"
+                                requiredRole={['SchoolAdmin', 'Teacher', 'Staff']}
+                            >
+                                <AttendancePage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/cameras"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="ManageCameras"
+                                requiredRole={['SchoolAdmin']}
+                            >
+                                <CamerasPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/training"
+                        element={
+                            <ProtectedRoute
+                                requiredPermission="TrainFaceRecognition"
+                                requiredRole={['SchoolAdmin']}
+                            >
+                                <TrainingPage />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* Page can access by all users. */}
+                    <Route
+                        path="/events"
+                        element={
+                            <ProtectedRoute>
+                                <EventsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* Settings - Accessible to all authenticated users */}
+                    <Route
+                        path="/settings"
+                        element={
+                            <ProtectedRoute>
+                                <SettingsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                </Route>
+
+                {/* Redirect root to dashboard */}
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+                {/* 404 - Not Found */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
         </BrowserRouter>
     );
 }
