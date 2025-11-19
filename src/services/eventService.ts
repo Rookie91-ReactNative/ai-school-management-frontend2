@@ -1,5 +1,4 @@
-﻿import api from './api';
-import { ActivityType } from './teamService';
+import api from './api';
 
 // ============================================
 // ENUMS
@@ -89,7 +88,7 @@ export interface ActivityEvent {
     result?: string;
     awardsReceived?: string;
     remarks?: string;
-    isActive: boolean; // ✅ NEW FIELD
+    isActive: boolean;
     createdDate: string;
     createdBy: number;
     updatedDate?: string;
@@ -163,7 +162,7 @@ export interface EventUpdateDto {
     eventName?: string;
     eventCode?: string;
     eventType?: EventType;
-    activityType?: ActivityType;
+    activityType?: number;
     status?: EventStatus;
     eventDate?: string;
     startTime?: string;
